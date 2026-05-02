@@ -40,4 +40,4 @@ export interface RegistroDia {
   saldoMinutos: number;
 }
 
-export type Tab = 'ponto' | 'historico' | 'calendario' | 'config';
+export type Tab = 'ponto' | 'historico' | 'config';
