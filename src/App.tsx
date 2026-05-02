@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Toaster } from 'sonner';
 import type { Registro, Profile, Tab, DiaCalendario } from '@/types';
 import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistro, getProfile, getCalendario, upsertCalendario, deleteCalendario } from '@/lib/supabase';
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { hoje, mesAtual, agora } from '@/lib/time-utils';
+import { useLembretes } from '@/hooks/useLembretes';
 import LoginForm from '@/components/LoginForm';
 import ClockCard from '@/components/ClockCard';
 import BankHistory from '@/components/BankHistory';
 import CalendarView from '@/components/CalendarView';
 import Settings from '@/components/Settings';
 import EditModal from '@/components/EditModal';
+import LancamentoManual from '@/components/LancamentoManual';
 import TabBar from '@/components/TabBar';
 
 export default function App() {
@@ -24,6 +27,16 @@ export default function App() {
   const [pendingCount, setPendingCount] = useState(0);
   const [editando, setEditando] = useState<Registro | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [lancamentoAberto, setLancamentoAberto] = useState(false);
+
+  // Lembretes/notificações
+  useLembretes(
+    registroHoje?.entrada || null,
+    registroHoje?.intervalo || null,
+    registroHoje?.retorno || null,
+    registroHoje?.saida || null,
+    profile?.jornada || '08:00'
+  );
 
   // Monitora online/offline
   useEffect(() => {
@@ -218,6 +231,31 @@ export default function App() {
       addToQueue('delete', registroHoje.id);
     }
   }
+  async function handleLancamentoManual(registro: Registro) {
+    if (!user) return;
+    const fullRegistro = { ...registro, user_id: user };
+    try {
+      if (isOnline) {
+        await upsertRegistro(fullRegistro);
+        await carregarDados();
+      } else {
+        addToQueue('upsert', fullRegistro);
+        setRegistrosMes((prev) => {
+          const idx = prev.findIndex((r) => r.data === fullRegistro.data);
+          if (idx >= 0) {
+            const updated = [...prev];
+            updated[idx] = fullRegistro;
+            return updated;
+          }
+          return [...prev, fullRegistro];
+        });
+      }
+      setLancamentoAberto(false);
+    } catch (err) {
+      console.error('Erro ao lançar ponto manual:', err);
+    }
+  }
+
   async function handleMarcarCalendario(data: string, tipo: DiaCalendario['tipo'], descricao: string | null) {
     if (!user) return;
     if (!isOnline) {
@@ -285,6 +323,7 @@ export default function App() {
             onRemoverPonto={handleRemoverPonto}
             onLimparDia={handleLimparDia}
             onSync={handleSync}
+            onAbrirLancamentoManual={() => setLancamentoAberto(true)}
             pendingCount={pendingCount}
             isOnline={isOnline}
           />
@@ -318,6 +357,16 @@ export default function App() {
       </div>
 
       <TabBar active={activeTab} onChange={setActiveTab} />
+
+      <Toaster position="top-center" richColors />
+
+      {lancamentoAberto && (
+        <LancamentoManual
+          userId={user}
+          onSalvar={handleLancamentoManual}
+          onClose={() => setLancamentoAberto(false)}
+        />
+      )}
 
       {editando && (
         <EditModal

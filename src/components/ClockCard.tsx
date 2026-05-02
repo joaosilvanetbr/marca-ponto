@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Registro, Profile } from '@/types';
-import { agora, paraHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos } from '@/lib/time-utils';
-import { Clock, LogIn, Coffee, Play, LogOut, CheckCircle2, Loader2, WifiOff, Save, X, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { agora, paraHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao } from '@/lib/time-utils';
+import { Clock, LogIn, Coffee, Play, LogOut, CheckCircle2, Loader2, WifiOff, Save, X, Pencil, Trash2, AlertTriangle, FilePlus } from 'lucide-react';
 
 interface ClockCardProps {
   registro: Registro | null;
@@ -11,11 +11,12 @@ interface ClockCardProps {
   onRemoverPonto: (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => Promise<void>;
   onLimparDia: () => Promise<void>;
   onSync: () => Promise<void>;
+  onAbrirLancamentoManual: () => void;
   pendingCount: number;
   isOnline: boolean;
 }
 
-export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia, onSync, pendingCount, isOnline }: ClockCardProps) {
+export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia, onSync, onAbrirLancamentoManual, pendingCount, isOnline }: ClockCardProps) {
   const [horaAtual, setHoraAtual] = useState(agora());
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<'entrada' | 'intervalo' | 'retorno' | 'saida' | null>(null);
@@ -115,7 +116,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
   return (
     <div className="space-y-4 pb-24">
-      {/* Relógio */}
+      {/* Relógio + Previsão de saída */}
       <div className="glass rounded-3xl p-6 text-center shadow-xl">
         <div className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 mb-2">
           <Clock className="w-4 h-4" />
@@ -124,12 +125,43 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
         <div className="text-6xl font-bold text-slate-800 dark:text-white tracking-tight tabular-nums">
           {horaAtual}
         </div>
+
+        {/* Previsão de saída */}
+        {(function () {
+          const msg = mensagemPrevisao(
+            registro?.entrada || null,
+            registro?.saida || null,
+            registro?.intervalo || null,
+            registro?.retorno || null,
+            profile?.jornada || '08:00'
+          );
+          const cores = {
+            info: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300',
+            warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+            success: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
+            neutral: 'bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400',
+          };
+          return (
+            <div className={`mt-4 text-sm font-medium rounded-xl px-4 py-2.5 ${cores[msg.tipo]}`}>
+              {msg.texto}
+            </div>
+          );
+        })()}
+
         {!isOnline && (
           <div className="mt-3 flex items-center justify-center gap-1.5 text-amber-500 text-sm">
             <WifiOff className="w-4 h-4" />
             <span>Modo offline — {pendingCount} pendente{pendingCount !== 1 ? 's' : ''}</span>
           </div>
         )}
+
+        {/* Botão lançar dia anterior */}
+        <button
+          onClick={onAbrirLancamentoManual}
+          className="mt-4 w-full py-2.5 rounded-xl border border-cyan-200 dark:border-cyan-800/50 text-cyan-600 dark:text-cyan-400 text-sm font-medium hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors flex items-center justify-center gap-2"
+        >
+          <FilePlus className="w-4 h-4" /> Lançar dia anterior
+        </button>
       </div>
 
       {/* Botão principal */}

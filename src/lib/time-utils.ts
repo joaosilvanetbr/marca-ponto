@@ -133,6 +133,128 @@ export function diasDoMes(anoMes: string): string[] {
 }
 
 /**
+ * Calcula a previsão de saída baseado na entrada e jornada
+ * Retorna null se ainda não houver entrada
+ */
+export function calcularPrevisaoSaida(
+  entrada: string | null,
+  intervalo: string | null,
+  retorno: string | null,
+  jornada: string
+): string | null {
+  if (!entrada) return null;
+
+  const entradaMin = paraMinutos(entrada);
+  const jornadaMin = paraMinutos(jornada);
+  let intervaloMin = 0;
+
+  if (intervalo && retorno) {
+    intervaloMin = paraMinutos(retorno) - paraMinutos(intervalo);
+  }
+
+  const saidaMin = entradaMin + jornadaMin + intervaloMin;
+  const h = Math.floor(saidaMin / 60);
+  const m = saidaMin % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+/**
+ * Retorna mensagem de status sobre previsão de saída
+ */
+export function mensagemPrevisao(
+  entrada: string | null,
+  saida: string | null,
+  intervalo: string | null,
+  retorno: string | null,
+  jornada: string
+): { texto: string; tipo: 'info' | 'warning' | 'success' | 'neutral' } {
+  if (!entrada) {
+    return { texto: 'Bata o ponto de entrada para ver a previsão de saída', tipo: 'neutral' };
+  }
+
+  if (saida) {
+    const minTrab = calcularMinutosTrabalhados(entrada, intervalo, retorno, saida);
+    const jornadaMin = paraMinutos(jornada);
+    const diff = minTrab - jornadaMin;
+
+    if (Math.abs(diff) <= 10) {
+      return { texto: 'Jornada completa! Você bateu exatamente o horário.', tipo: 'success' };
+    }
+    if (diff > 0) {
+      return { texto: `Saiu ${paraHora(diff)} a mais (horas extras)`, tipo: 'success' };
+    }
+    return { texto: `Saiu ${paraHora(Math.abs(diff))} a menos`, tipo: 'warning' };
+  }
+
+  const previsao = calcularPrevisaoSaida(entrada, intervalo, retorno, jornada);
+  if (!previsao) {
+    return { texto: 'Bata o ponto de entrada para ver a previsão de saída', tipo: 'neutral' };
+  }
+
+  const agoraMin = paraMinutos(agora());
+  const saidaMin = paraMinutos(previsao);
+
+  if (agoraMin > saidaMin) {
+    const atraso = agoraMin - saidaMin;
+    return { texto: `Você deveria ter saído às ${previsao} (${paraHora(atraso)} atrasado)`, tipo: 'warning' };
+  }
+
+  const falta = saidaMin - agoraMin;
+  if (falta <= 30) {
+    return { texto: `Você pode sair às ${previsao} (faltam ${paraHora(falta)})`, tipo: 'success' };
+  }
+
+  return { texto: `Você pode sair às ${previsao}`, tipo: 'info' };
+}
+
+/**
+ * Verifica lembretes de ponto baseado no estado atual do dia
+ */
+export function verificarLembretes(
+  entrada: string | null,
+  intervalo: string | null,
+  retorno: string | null,
+  saida: string | null,
+  jornada: string
+): string | null {
+  const hora = agora();
+  const h = paraMinutos(hora);
+
+  // Não bateu entrada e já passou de 9h
+  if (!entrada && h >= 540 && h <= 570) {
+    return 'Bom dia! Não esqueça de bater o ponto de entrada.';
+  }
+
+  // Bateu entrada mas não intervalo e já passou 4h
+  if (entrada && !intervalo && !retorno && !saida) {
+    const trabalhando = h - paraMinutos(entrada);
+    if (trabalhando >= 240 && trabalhando <= 270) {
+      return 'Já trabalhou 4 horas. Hora do intervalo?';
+    }
+  }
+
+  // Bateu intervalo mas não retorno e já passou 1h
+  if (entrada && intervalo && !retorno && !saida) {
+    const descanso = h - paraMinutos(intervalo);
+    if (descanso >= 60 && descanso <= 90) {
+      return 'Intervalo terminando. Hora de voltar ao trabalho?';
+    }
+  }
+
+  // Previsão de saída próxima
+  if (entrada && !saida) {
+    const previsao = calcularPrevisaoSaida(entrada, intervalo, retorno, jornada);
+    if (previsao) {
+      const saidaMin = paraMinutos(previsao);
+      if (h >= saidaMin - 15 && h <= saidaMin) {
+        return `Você pode sair às ${previsao} — não esqueça de bater o ponto de saída!`;
+      }
+    }
+  }
+
+  return null;
+}
+/**
  * Nome do dia da semana abreviado
  */
 export function nomeDiaSemana(data: string): string {
