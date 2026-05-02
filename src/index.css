@@ -101,4 +101,14 @@
   .animate-slide-up {
     animation: slide-up 0.3s ease-out;
   }
+
+  @keyframes fade-out {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .animate-fade-out {
+    animation: fade-out 2s ease-in-out forwards;
+  }
 }
