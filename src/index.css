@@ -77,8 +77,8 @@
 }
 
 @layer components {
-  .glass {
-    @apply bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/40;
+  .ios-card {
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm;
   }
 }
 

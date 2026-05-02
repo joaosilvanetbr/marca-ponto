@@ -97,7 +97,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Perfil */}
-      <div className="glass rounded-3xl p-6 shadow-xl">
+      <div className="ios-card rounded-2xl p-6 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg">
             <span className="text-xl font-bold text-white">{userEmail.charAt(0).toUpperCase()}</span>
@@ -112,7 +112,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
       </div>
 
       {/* Configurações */}
-      <div className="glass rounded-3xl p-6 shadow-xl space-y-5">
+      <div className="ios-card rounded-2xl p-6 shadow-xl space-y-5">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
           <Bell className="w-4 h-4" /> Configurações
         </h3>
@@ -120,7 +120,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
         {/* Tema - auto-salva */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
               {darkMode ? <Moon className="w-5 h-5 text-amber-600 dark:text-amber-400" /> : <Sun className="w-5 h-5 text-amber-600" />}
             </div>
             <div>
@@ -140,7 +140,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
         {/* Jornada */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
@@ -152,14 +152,14 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
             type="time"
             value={jornada}
             onChange={(e) => handleJornadaChange(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
           />
         </div>
 
         {/* Tolerância */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
               <Timer className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
@@ -173,14 +173,14 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
             max={60}
             value={tolerancia}
             onChange={(e) => handleToleranciaChange(Number(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
           />
         </div>
 
         {/* Saldo inicial */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
               <Wallet className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
@@ -192,7 +192,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
             type="number"
             value={saldoInicial}
             onChange={(e) => handleSaldoChange(Number(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
           />
           <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
             Atual: {saldoSinal}{saldoHoras}h {saldoMin}min

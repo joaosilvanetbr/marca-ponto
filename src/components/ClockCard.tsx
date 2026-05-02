@@ -116,7 +116,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
     <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }} className="space-y-4 pb-24">
       {/* Relógio + Previsão */}
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
-        <div className="glass rounded-3xl p-6 text-center shadow-xl">
+        <div className="ios-card rounded-2xl p-6 text-center shadow-xl">
           <motion.div className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 mb-2" animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 3, repeat: Infinity }}>
             <Clock className="w-4 h-4" />
             <span className="text-sm font-medium">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
@@ -128,7 +128,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
           <AnimatePresence mode="wait">
             {(function () {
               const msg = mensagemPrevisao(registro?.entrada || null, registro?.saida || null, registro?.intervalo || null, registro?.retorno || null, profile?.jornada || '08:00');
-              const cores = { info: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300', warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300', success: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300', neutral: 'bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400' };
+              const cores = { info: 'bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300', warning: 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300', success: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300', neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400' };
               return (
                 <motion.div key={msg.texto} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className={`mt-4 text-sm font-medium rounded-xl px-4 py-2.5 ${cores[msg.tipo]}`}>
                   {msg.texto}
@@ -152,7 +152,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
       {/* Botão principal / Jornada completa */}
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
-        <div className="glass rounded-3xl p-6 shadow-xl">
+        <div className="ios-card rounded-2xl p-6 shadow-xl">
           <AnimatePresence mode="wait">
             {proximo ? (
               <motion.button
@@ -198,13 +198,13 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
           {/* Resumo */}
           <div className="mt-6 grid grid-cols-2 gap-3">
-            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 text-center">
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Trabalhado</div>
               <motion.div key={minutosTrabalhados} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">
                 {paraHora(minutosTrabalhados)}
               </motion.div>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 text-center">
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Saldo</div>
               <motion.div key={saldo} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className={`text-xl font-bold mt-1 tabular-nums ${saldo >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                 {saldo >= 0 ? '+' : ''}{paraHora(saldo)}
@@ -247,7 +247,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
       {/* Timeline */}
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
-        <div className="glass rounded-3xl p-6 shadow-xl">
+        <div className="ios-card rounded-2xl p-6 shadow-xl">
           <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Timeline do dia</h3>
           <div className="space-y-3">
             {timeline.map((item, i) => {
@@ -262,7 +262,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: isDone || isNext ? 1 : 0.5, x: 0 }}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className={`flex items-center gap-3 p-3 rounded-xl ${isDone ? 'bg-white/60 dark:bg-slate-800/60' : isNext ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border border-cyan-200/50 dark:border-cyan-800/50' : 'opacity-50'}`}
+                  className={`flex items-center gap-3 p-3 rounded-xl ${isDone ? 'bg-slate-50 dark:bg-slate-800' : isNext ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200/50 dark:border-cyan-800/50' : 'opacity-50'}`}
                 >
                   <motion.div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-md ${isDone ? '' : 'grayscale'}`} initial={isDone ? { scale: 0 } : {}} animate={isDone ? { scale: 1 } : {}} transition={{ type: 'spring', stiffness: 300, damping: 20, delay: i * 0.1 }}>
                     <Icon className="w-5 h-5 text-white" />
@@ -272,7 +272,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.label}</div>
                     {isEditing && isDone ? (
                       <div className="flex items-center gap-2 mt-1">
-                        <input type="time" value={horaEditada} onChange={(e) => setHoraEditada(e.target.value)} className="px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-700/80 border border-cyan-300 dark:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm text-slate-800 dark:text-white" step="1" />
+                        <input type="time" value={horaEditada} onChange={(e) => setHoraEditada(e.target.value)} className="px-2 py-1 rounded-lg bg-white dark:bg-slate-700 border border-cyan-300 dark:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm text-slate-800 dark:text-white" step="1" />
                         <motion.button whileTap={{ scale: 0.9 }} onClick={() => salvarEdicao(item.key)} disabled={salvandoEdicao} className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50">
                           {salvandoEdicao ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         </motion.button>
@@ -289,7 +289,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
                   {isDone && !isEditing && (
                     <div className="flex items-center gap-1">
-                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => iniciarEdicao(item.key, item.time!)} className="p-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors" title="Editar">
+                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => iniciarEdicao(item.key, item.time!)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Editar">
                         <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                       </motion.button>
                       <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleRemover(item.key)} disabled={removendo === item.key} className="p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50" title="Excluir ponto">
