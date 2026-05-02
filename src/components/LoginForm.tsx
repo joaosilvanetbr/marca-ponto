@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { motion } from 'framer-motion';
 import { LogIn, UserPlus, Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
@@ -36,8 +37,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm glass rounded-3xl p-8 shadow-2xl">
+    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="min-h-screen flex items-center justify-center p-4">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="w-full max-w-sm glass rounded-3xl p-8 shadow-2xl">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <LogIn className="w-8 h-8 text-white" />
@@ -111,7 +112,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             {modo === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre'}
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

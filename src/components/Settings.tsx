@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Profile } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
+import { motion } from 'framer-motion';
 import { Sun, Moon, Loader2, LogOut, Briefcase, Timer, Wallet, Bell, CheckCircle2 } from 'lucide-react';
 
 interface SettingsProps {
@@ -94,7 +95,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
   const saldoSinal = saldoInicial < 0 ? '-' : '';
 
   return (
-    <div className="space-y-4 pb-24">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Perfil */}
       <div className="glass rounded-3xl p-6 shadow-xl">
         <div className="flex items-center gap-4">
@@ -223,6 +224,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
       >
         <LogOut className="w-5 h-5" /> Sair da conta
       </button>
-    </div>
+    </motion.div>
   );
 }

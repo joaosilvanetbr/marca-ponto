@@ -13,6 +13,7 @@ import Settings from '@/components/Settings';
 import EditModal from '@/components/EditModal';
 import LancamentoManual from '@/components/LancamentoManual';
 import TabBar from '@/components/TabBar';
+import { TabSlide } from '@/components/animations';
 
 export default function App() {
   const [user, setUser] = useState<string | null>(null);
@@ -28,6 +29,18 @@ export default function App() {
   const [editando, setEditando] = useState<Registro | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [lancamentoAberto, setLancamentoAberto] = useState(false);
+  const [tabDirection, setTabDirection] = useState<'left' | 'right'>('right');
+  const [prevTab, setPrevTab] = useState<Tab>('ponto');
+
+  const tabOrder: Tab[] = ['ponto', 'historico', 'calendario', 'config'];
+
+  const handleTabChange = (tab: Tab) => {
+    const currentIdx = tabOrder.indexOf(prevTab);
+    const newIdx = tabOrder.indexOf(tab);
+    setTabDirection(newIdx > currentIdx ? 'right' : 'left');
+    setPrevTab(tab);
+    setActiveTab(tab);
+  };
 
   // Lembretes/notificações
   useLembretes(
@@ -314,49 +327,51 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white transition-colors">
       <div className="max-w-md mx-auto px-4 py-6">
-        {activeTab === 'ponto' && (
-          <ClockCard
-            registro={registroHoje}
-            profile={profile}
-            onRegistrar={handleRegistrar}
-            onEditar={handleUpdate}
-            onRemoverPonto={handleRemoverPonto}
-            onLimparDia={handleLimparDia}
-            onSync={handleSync}
-            onAbrirLancamentoManual={() => setLancamentoAberto(true)}
-            pendingCount={pendingCount}
-            isOnline={isOnline}
-          />
-        )}
+        <TabSlide activeTab={activeTab} direction={tabDirection}>
+          {activeTab === 'ponto' && (
+            <ClockCard
+              registro={registroHoje}
+              profile={profile}
+              onRegistrar={handleRegistrar}
+              onEditar={handleUpdate}
+              onRemoverPonto={handleRemoverPonto}
+              onLimparDia={handleLimparDia}
+              onSync={handleSync}
+              onAbrirLancamentoManual={() => setLancamentoAberto(true)}
+              pendingCount={pendingCount}
+              isOnline={isOnline}
+            />
+          )}
 
-        {activeTab === 'historico' && (
-          <BankHistory
-            registros={registrosMes}
-            calendario={calendario}
-            profile={profile}
-            onEdit={setEditando}
-            onDelete={handleDelete}
-          />
-        )}
+          {activeTab === 'historico' && (
+            <BankHistory
+              registros={registrosMes}
+              calendario={calendario}
+              profile={profile}
+              onEdit={setEditando}
+              onDelete={handleDelete}
+            />
+          )}
 
-        {activeTab === 'calendario' && (
-          <CalendarView
-            calendario={calendario}
-            onMarcar={handleMarcarCalendario}
-            onRemover={handleRemoverCalendario}
-          />
-        )}
+          {activeTab === 'calendario' && (
+            <CalendarView
+              calendario={calendario}
+              onMarcar={handleMarcarCalendario}
+              onRemover={handleRemoverCalendario}
+            />
+          )}
 
-        {activeTab === 'config' && (
-          <Settings
-            profile={profile}
-            userEmail={userEmail}
-            onProfileUpdate={carregarDados}
-          />
-        )}
+          {activeTab === 'config' && (
+            <Settings
+              profile={profile}
+              userEmail={userEmail}
+              onProfileUpdate={carregarDados}
+            />
+          )}
+        </TabSlide>
       </div>
 
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      <TabBar active={activeTab} onChange={handleTabChange} />
 
       <Toaster position="top-center" richColors />
 
