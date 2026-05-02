@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'sonner';
-import type { Registro, Profile, Tab, DiaCalendario } from '@/types';
-import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistro, getProfile, getCalendario, upsertCalendario, deleteCalendario } from '@/lib/supabase';
+import type { Registro, Profile, Tab } from '@/types';
+import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistro, getProfile } from '@/lib/supabase';
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { hoje, mesAtual, agora } from '@/lib/time-utils';
 import { useLembretes } from '@/hooks/useLembretes';
 import LoginForm from '@/components/LoginForm';
 import ClockCard from '@/components/ClockCard';
 import BankHistory from '@/components/BankHistory';
-import CalendarView from '@/components/CalendarView';
 import Settings from '@/components/Settings';
 import EditModal from '@/components/EditModal';
 import LancamentoManual from '@/components/LancamentoManual';
@@ -21,7 +20,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('ponto');
   const [registroHoje, setRegistroHoje] = useState<Registro | null>(null);
   const [registrosMes, setRegistrosMes] = useState<Registro[]>([]);
-  const [calendario, setCalendario] = useState<DiaCalendario[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -32,7 +30,7 @@ export default function App() {
   const [tabDirection, setTabDirection] = useState<'left' | 'right'>('right');
   const [prevTab, setPrevTab] = useState<Tab>('ponto');
 
-  const tabOrder: Tab[] = ['ponto', 'historico', 'calendario', 'config'];
+  const tabOrder: Tab[] = ['ponto', 'historico', 'config'];
 
   const handleTabChange = (tab: Tab) => {
     const currentIdx = tabOrder.indexOf(prevTab);
@@ -100,15 +98,13 @@ export default function App() {
     if (!user) return;
     setCarregando(true);
     try {
-      const [regDia, regsMes, calMes, prof] = await Promise.all([
+      const [regDia, regsMes, prof] = await Promise.all([
         getRegistroDoDia(user, hoje()),
         getRegistros(user, mesAtual()),
-        getCalendario(user, mesAtual()),
         getProfile(user),
       ]);
       setRegistroHoje(regDia);
       setRegistrosMes(regsMes);
-      setCalendario(calMes);
       setProfile(prof);
 
       if (prof?.dark_mode) {
@@ -269,45 +265,6 @@ export default function App() {
     }
   }
 
-  async function handleMarcarCalendario(data: string, tipo: DiaCalendario['tipo'], descricao: string | null) {
-    if (!user) return;
-    if (!isOnline) {
-      alert('Você está offline. Conecte-se à internet para marcar dias no calendário.');
-      return;
-    }
-    const item: DiaCalendario = { user_id: user, data, tipo, descricao };
-    try {
-      await upsertCalendario(item);
-      setCalendario((prev) => {
-        const idx = prev.findIndex((c) => c.data === data);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...item, id: prev[idx].id };
-          return updated;
-        }
-        return [...prev, item];
-      });
-    } catch (err) {
-      console.error('Erro ao marcar calendário:', err);
-      alert('Erro ao salvar no calendário. Tente novamente.');
-    }
-  }
-
-  async function handleRemoverCalendario(data: string) {
-    if (!user) return;
-    if (!isOnline) {
-      alert('Você está offline. Conecte-se à internet para remover dias do calendário.');
-      return;
-    }
-    try {
-      await deleteCalendario(user, data);
-      setCalendario((prev) => prev.filter((c) => c.data !== data));
-    } catch (err) {
-      console.error('Erro ao remover calendário:', err);
-      alert('Erro ao remover do calendário. Tente novamente.');
-    }
-  }
-
   if (carregando && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -346,18 +303,9 @@ export default function App() {
           {activeTab === 'historico' && (
             <BankHistory
               registros={registrosMes}
-              calendario={calendario}
               profile={profile}
               onEdit={setEditando}
               onDelete={handleDelete}
-            />
-          )}
-
-          {activeTab === 'calendario' && (
-            <CalendarView
-              calendario={calendario}
-              onMarcar={handleMarcarCalendario}
-              onRemover={handleRemoverCalendario}
             />
           )}
 

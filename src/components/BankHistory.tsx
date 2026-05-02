@@ -1,32 +1,17 @@
 import { useState, useMemo } from 'react';
-import type { Registro, Profile, DiaCalendario } from '@/types';
+import type { Registro, Profile } from '@/types';
 import { mesAtual, diasDoMes, nomeDiaSemana, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays, PartyPopper, Umbrella, HeartPulse, Briefcase } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays } from 'lucide-react';
 
 interface BankHistoryProps {
   registros: Registro[];
-  calendario: DiaCalendario[];
   profile: Profile | null;
   onEdit: (registro: Registro) => void;
   onDelete: (id: number) => Promise<void>;
 }
 
-const iconMap = {
-  feriado: PartyPopper,
-  folga: Umbrella,
-  licenca: Briefcase,
-  atestado: HeartPulse,
-};
-
-const corMap = {
-  feriado: 'text-rose-500',
-  folga: 'text-emerald-500',
-  licenca: 'text-amber-500',
-  atestado: 'text-blue-500',
-};
-
-export default function BankHistory({ registros, calendario, profile, onEdit, onDelete }: BankHistoryProps) {
+export default function BankHistory({ registros, profile, onEdit, onDelete }: BankHistoryProps) {
   const [mesSelecionado, setMesSelecionado] = useState(mesAtual());
   const [deletando, setDeletando] = useState<number | null>(null);
 
@@ -35,19 +20,9 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
 
   const registrosMap = useMemo(() => {
     const map = new Map<string, Registro>();
-    for (const r of registros) {
-      map.set(r.data, r);
-    }
+    for (const r of registros) map.set(r.data, r);
     return map;
   }, [registros]);
-
-  const calendarioMap = useMemo(() => {
-    const map = new Map<string, DiaCalendario>();
-    for (const c of calendario) {
-      map.set(c.data, c);
-    }
-    return map;
-  }, [calendario]);
 
   const dias = useMemo(() => diasDoMes(mesSelecionado), [mesSelecionado]);
 
@@ -58,68 +33,57 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
 
     for (const dia of dias) {
       const reg = registrosMap.get(dia);
-      const cal = calendarioMap.get(dia);
-
       if (reg) {
         const trab = calcularMinutosTrabalhados(reg.entrada, reg.intervalo, reg.retorno, reg.saida);
         const saldo = calcularSaldoDia(trab, jornadaMin, tolerancia);
         totalTrabalhado += trab;
         saldoMes += saldo;
-        items.push({ data: dia, reg, cal, trab, saldo });
-      } else if (cal) {
-        // Dia marcado no calendário (feriado/folga) - não conta como falta
-        items.push({ data: dia, reg: null, cal, trab: 0, saldo: 0 });
+        items.push({ data: dia, reg, trab, saldo });
       } else {
         const hojeStr = new Date().toISOString().split('T')[0];
         if (dia <= hojeStr) {
           const semana = new Date(dia + 'T12:00:00').getDay();
           if (semana !== 0 && semana !== 6) {
             saldoMes -= jornadaMin;
-            items.push({ data: dia, reg: null, cal: null, trab: 0, saldo: -jornadaMin });
+            items.push({ data: dia, reg: null, trab: 0, saldo: -jornadaMin });
           }
         }
       }
     }
-
     return { items, totalTrabalhado, saldoMes };
-  }, [dias, registrosMap, calendarioMap, jornadaMin, tolerancia]);
+  }, [dias, registrosMap, jornadaMin, tolerancia]);
 
   function mudarMes(delta: number) {
     const [y, m] = mesSelecionado.split('-').map(Number);
     const novo = new Date(y, m - 1 + delta, 1);
-    const novoMes = `${novo.getFullYear()}-${String(novo.getMonth() + 1).padStart(2, '0')}`;
-    setMesSelecionado(novoMes);
+    setMesSelecionado(`${novo.getFullYear()}-${String(novo.getMonth() + 1).padStart(2, '0')}`);
   }
 
   async function handleDelete(id: number) {
     setDeletando(id);
-    try {
-      await onDelete(id);
-    } finally {
-      setDeletando(null);
-    }
+    try { await onDelete(id); } finally { setDeletando(null); }
   }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Header do mês */}
-      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="glass rounded-3xl p-4 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="glass rounded-3xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
-          <button onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </button>
+          </motion.button>
           <div className="flex items-center gap-2 text-slate-800 dark:text-white font-semibold">
             <CalendarDays className="w-5 h-5 text-cyan-500" />
             {formatarMesAno(mesSelecionado + '-01')}
           </div>
-          <button onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </button>
+          </motion.button>
         </div>
       </motion.div>
 
       {/* Resumo do mês */}
-      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="glass rounded-3xl p-5 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="glass rounded-3xl p-5 shadow-xl">
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 text-center">
             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Total Trabalhado</div>
@@ -150,9 +114,6 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
           {dados.items.map((item) => {
             const isHoje = item.data === new Date().toISOString().split('T')[0];
             const temRegistro = !!item.reg;
-            const temCalendario = !!item.cal;
-            const CalIcon = temCalendario ? iconMap[item.cal!.tipo] : null;
-
             return (
               <motion.div
                 key={item.data}
@@ -167,7 +128,6 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
                   <div className="text-xs text-slate-400 dark:text-slate-500">{nomeDiaSemana(item.data)}</div>
                   <div className="text-lg font-bold text-slate-700 dark:text-slate-200">{item.data.split('-')[2]}</div>
                 </div>
-
                 <div className="flex-1 min-w-0">
                   {temRegistro ? (
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
@@ -176,59 +136,31 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
                       {item.reg!.retorno && <span className="text-slate-600 dark:text-slate-300">R: {item.reg!.retorno}</span>}
                       {item.reg!.saida && <span className="text-slate-600 dark:text-slate-300">S: {item.reg!.saida}</span>}
                     </div>
-                  ) : temCalendario ? (
-                    <div className="flex items-center gap-1.5 text-sm">
-                      {CalIcon && <CalIcon className={`w-4 h-4 ${corMap[item.cal!.tipo]}`} />}
-                      <span className={`font-medium ${corMap[item.cal!.tipo]}`}>
-                        {item.cal!.tipo === 'feriado' && 'Feriado'}
-                        {item.cal!.tipo === 'folga' && 'Folga'}
-                        {item.cal!.tipo === 'licenca' && 'Licença'}
-                        {item.cal!.tipo === 'atestado' && 'Atestado'}
-                      </span>
-                      {item.cal!.descricao && <span className="text-slate-400 dark:text-slate-500 text-xs truncate">— {item.cal!.descricao}</span>}
-                    </div>
                   ) : (
                     <span className="text-sm text-slate-400 dark:text-slate-500 italic">Sem registro</span>
                   )}
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{paraHora(item.trab)}</span>
-                    {!temCalendario && (
-                      <span className={`text-xs font-semibold tabular-nums ${item.saldo >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {item.saldo >= 0 ? '+' : ''}{paraHora(item.saldo)}
-                      </span>
-                    )}
+                    <span className={`text-xs font-semibold tabular-nums ${item.saldo >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {item.saldo >= 0 ? '+' : ''}{paraHora(item.saldo)}
+                    </span>
                   </div>
                 </div>
-
                 {temRegistro && (
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => onEdit(item.reg!)}
-                      className="p-2 rounded-xl hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors"
-                    >
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onEdit(item.reg!)} className="p-2 rounded-xl hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors">
                       <Pencil className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.reg!.id!)}
-                      disabled={deletando === item.reg!.id}
-                      className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50"
-                    >
-                      {deletando === item.reg!.id ? (
-                        <Loader2 className="w-4 h-4 text-rose-500 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4 text-rose-500" />
-                      )}
-                    </button>
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleDelete(item.reg!.id!)} disabled={deletando === item.reg!.id} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
+                      {deletando === item.reg!.id ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
+                    </motion.button>
                   </div>
                 )}
               </motion.div>
             );
           })}
-
           {dados.items.length === 0 && (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-              Nenhum registro neste mês
-            </div>
+            <div className="text-center py-8 text-slate-400 dark:text-slate-500">Nenhum registro neste mês</div>
           )}
         </div>
       </div>
