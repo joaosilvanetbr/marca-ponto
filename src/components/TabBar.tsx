@@ -1,4 +1,5 @@
 import type { Tab } from '@/types';
+import { motion } from 'framer-motion';
 import { Clock, History, CalendarDays, Settings } from 'lucide-react';
 
 interface TabBarProps {
@@ -22,8 +23,9 @@ export default function TabBar({ active, onChange }: TabBarProps) {
             const isActive = active === tab.id;
             const Icon = tab.icon;
             return (
-              <button
+              <motion.button
                 key={tab.id}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(tab.id)}
                 className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
                   isActive
@@ -33,7 +35,7 @@ export default function TabBar({ active, onChange }: TabBarProps) {
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{tab.label}</span>
-              </button>
+              </motion.button>
             );
           })}
         </div>

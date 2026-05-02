@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { DiaCalendario } from '@/types';
 import { mesAtual, diasDoMes, nomeDiaSemana, formatarMesAno } from '@/lib/time-utils';
 import { ChevronLeft, ChevronRight, CalendarDays, Trash2, Loader2, PartyPopper, Umbrella, HeartPulse, Briefcase } from 'lucide-react';
@@ -26,9 +27,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
 
   const calendarioMap = useMemo(() => {
     const map = new Map<string, DiaCalendario>();
-    for (const c of calendario) {
-      map.set(c.data, c);
-    }
+    for (const c of calendario) map.set(c.data, c);
     return map;
   }, [calendario]);
 
@@ -60,7 +59,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
     }
   }
 
-  async function handleRemover(data: string) {
+  async function handleRemoverLocal(data: string) {
     setDeletando(data);
     try {
       await onRemover(data);
@@ -74,22 +73,22 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
   const primeiroDiaSemana = new Date(ano, mesNum - 1, 1).getDay();
 
   return (
-    <div className="space-y-4 pb-24">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Header do mês */}
-      <div className="glass rounded-3xl p-4 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="glass rounded-3xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
-          <button onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </button>
+          </motion.button>
           <div className="flex items-center gap-2 text-slate-800 dark:text-white font-semibold">
             <CalendarDays className="w-5 h-5 text-cyan-500" />
             {formatarMesAno(mesSelecionado + '-01')}
           </div>
-          <button onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Legenda */}
       <div className="glass rounded-2xl p-3 shadow-xl">
@@ -124,8 +123,10 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
             const Icon = config?.icon;
 
             return (
-              <button
+              <motion.button
                 key={dia}
+                whileTap={{ scale: 0.92 }}
+                whileHover={{ scale: 1.05 }}
                 onClick={() => {
                   setDiaSelecionado(isSelecionado ? null : dia);
                   if (calendarioMap.get(dia)) {
@@ -134,123 +135,110 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
                   }
                 }}
                 className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all ${
-                  isSelecionado
-                    ? 'ring-2 ring-cyan-400 bg-cyan-50 dark:bg-cyan-900/30'
-                    : config
-                      ? `${config.bg} ${config.darkBg}`
-                      : 'hover:bg-white/40 dark:hover:bg-slate-800/40'
+                  isSelecionado ? 'ring-2 ring-cyan-400 bg-cyan-50 dark:bg-cyan-900/30' : config ? `${config.bg} ${config.darkBg}` : 'hover:bg-white/40 dark:hover:bg-slate-800/40'
                 } ${isHoje && !config ? 'bg-slate-100 dark:bg-slate-800/50 font-bold' : ''}`}
               >
                 <span className={`text-sm ${config ? config.cor : 'text-slate-700 dark:text-slate-200'}`}>
                   {dia.split('-')[2]}
                 </span>
                 {Icon && <Icon className={`w-3.5 h-3.5 mt-0.5 ${config?.cor}`} />}
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
       {/* Painel de edição do dia selecionado */}
-      {diaSelecionado && (
-        <div className="glass rounded-3xl p-5 shadow-xl space-y-4 animate-slide-up">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-800 dark:text-white">
-              {nomeDiaSemana(diaSelecionado)}, {diaSelecionado.split('-')[2]}/{diaSelecionado.split('-')[1]}
-            </h3>
-            {calendarioMap.get(diaSelecionado) && (
-              <button
-                onClick={() => handleRemover(diaSelecionado)}
-                disabled={deletando === diaSelecionado}
-                className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50"
-              >
-                {deletando === diaSelecionado ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
-              </button>
-            )}
-          </div>
-
-          {/* Tipo */}
-          <div className="grid grid-cols-2 gap-2">
-            {tiposConfig.map((t) => {
-              const Icon = t.icon;
-              const ativo = tipoSelecionado === t.tipo;
-              return (
-                <button
-                  key={t.tipo}
-                  onClick={() => setTipoSelecionado(t.tipo)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    ativo
-                      ? `${t.bg} ${t.darkBg} ${t.cor} ring-1 ring-current`
-                      : 'bg-white/40 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-700/60'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Descrição */}
-          <div>
-            <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Descrição (opcional)</label>
-            <input
-              type="text"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Ex: Feriado nacional, Consulta médica..."
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
-            />
-          </div>
-
-          <button
-            onClick={handleSalvar}
-            disabled={salvando}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+      <AnimatePresence>
+        {diaSelecionado && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="glass rounded-3xl p-5 shadow-xl space-y-4"
           >
-            {salvando ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CalendarDays className="w-5 h-5" /> Salvar no Calendário</>}
-          </button>
-        </div>
-      )}
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-slate-800 dark:text-white">
+                {nomeDiaSemana(diaSelecionado)}, {diaSelecionado.split('-')[2]}/{diaSelecionado.split('-')[1]}
+              </h3>
+              {calendarioMap.get(diaSelecionado) && (
+                <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleRemoverLocal(diaSelecionado)} disabled={deletando === diaSelecionado} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
+                  {deletando === diaSelecionado ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
+                </motion.button>
+              )}
+            </div>
+
+            {/* Tipo */}
+            <div className="grid grid-cols-2 gap-2">
+              {tiposConfig.map((t) => {
+                const Icon = t.icon;
+                const ativo = tipoSelecionado === t.tipo;
+                return (
+                  <motion.button
+                    key={t.tipo}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setTipoSelecionado(t.tipo)}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      ativo ? `${t.bg} ${t.darkBg} ${t.cor} ring-1 ring-current` : 'bg-white/40 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-700/60'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {t.label}
+                  </motion.button>
+                );
+              })}
+            </div>
+
+            {/* Descrição */}
+            <div>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Descrição (opcional)</label>
+              <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Feriado nacional, Consulta médica..." className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400" />
+            </div>
+
+            <motion.button whileTap={{ scale: 0.96 }} onClick={handleSalvar} disabled={salvando} className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+              {salvando ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CalendarDays className="w-5 h-5" /> Salvar no Calendário</>}
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Lista de dias marcados no mês */}
       <div className="glass rounded-3xl p-4 shadow-xl">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-          Dias marcados neste mês
-        </h3>
+        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Dias marcados neste mês</h3>
         <div className="space-y-2 max-h-[30vh] overflow-y-auto">
           {calendario.filter((c) => c.data.startsWith(mesSelecionado)).length === 0 ? (
             <div className="text-center py-4 text-slate-400 dark:text-slate-500 text-sm">Nenhum dia marcado</div>
           ) : (
-            calendario
-              .filter((c) => c.data.startsWith(mesSelecionado))
-              .map((item) => {
-                const config = tiposConfig.find((t) => t.tipo === item.tipo);
-                const Icon = config?.icon;
-                return (
-                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/30 dark:bg-slate-800/30">
-                    <div className={`w-9 h-9 rounded-lg ${config?.bg} ${config?.darkBg} flex items-center justify-center`}>
-                      {Icon && <Icon className={`w-4 h-4 ${config?.cor}`} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                        {item.data.split('-')[2]}/{item.data.split('-')[1]} — {config?.label}
-                      </div>
-                      {item.descricao && <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.descricao}</div>}
-                    </div>
-                    <button
-                      onClick={() => handleRemover(item.data)}
-                      disabled={deletando === item.data}
-                      className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50"
-                    >
-                      {deletando === item.data ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
-                    </button>
+            calendario.filter((c) => c.data.startsWith(mesSelecionado)).map((item) => {
+              const config = tiposConfig.find((t) => t.tipo === item.tipo);
+              const Icon = config?.icon;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/30 dark:bg-slate-800/30"
+                >
+                  <div className={`w-9 h-9 rounded-lg ${config?.bg} ${config?.darkBg} flex items-center justify-center`}>
+                    {Icon && <Icon className={`w-4 h-4 ${config?.cor}`} />}
                   </div>
-                );
-              })
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      {item.data.split('-')[2]}/{item.data.split('-')[1]} — {config?.label}
+                    </div>
+                    {item.descricao && <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{item.descricao}</div>}
+                  </div>
+                  <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleRemoverLocal(item.data)} disabled={deletando === item.data} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
+                    {deletando === item.data ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
+                  </motion.button>
+                </motion.div>
+              );
+            })
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

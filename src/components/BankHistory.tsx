@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { Registro, Profile, DiaCalendario } from '@/types';
 import { mesAtual, diasDoMes, nomeDiaSemana, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
+import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays, PartyPopper, Umbrella, HeartPulse, Briefcase } from 'lucide-react';
 
 interface BankHistoryProps {
@@ -100,9 +101,9 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
   }
 
   return (
-    <div className="space-y-4 pb-24">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Header do mês */}
-      <div className="glass rounded-3xl p-4 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="glass rounded-3xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <button onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
@@ -115,10 +116,10 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Resumo do mês */}
-      <div className="glass rounded-3xl p-5 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="glass rounded-3xl p-5 shadow-xl">
         <div className="grid grid-cols-2 gap-4">
           <div className="rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 text-center">
             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Total Trabalhado</div>
@@ -138,7 +139,7 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
             </span>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Lista de dias */}
       <div className="glass rounded-3xl p-4 shadow-xl">
@@ -153,8 +154,11 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
             const CalIcon = temCalendario ? iconMap[item.cal!.tipo] : null;
 
             return (
-              <div
+              <motion.div
                 key={item.data}
+                initial={{ opacity: 0, x: -15 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
                 className={`flex items-center gap-3 p-3 rounded-2xl transition-all ${
                   isHoje ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border border-cyan-200/50 dark:border-cyan-800/50' : 'bg-white/30 dark:bg-slate-800/30'
                 }`}
@@ -217,7 +221,7 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
                     </button>
                   </div>
                 )}
-              </div>
+              </motion.div>
             );
           })}
 
@@ -228,6 +232,6 @@ export default function BankHistory({ registros, calendario, profile, onEdit, on
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
