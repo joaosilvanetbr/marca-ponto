@@ -1,5 +1,5 @@
 -- ============================================================
--- SCHEMA COMPLETO - Meu Ponto
+-- SCHEMA COMPLETO - Meu Ponto (atualizado)
 -- Execute no Supabase SQL Editor (New Query)
 -- ============================================================
 
@@ -35,28 +35,12 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- --------------------------------------------------------
--- 3. Tabela de calendário (feriados, folgas, licenças, atestados)
--- --------------------------------------------------------
-CREATE TABLE IF NOT EXISTS calendario (
-  id SERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  data DATE NOT NULL,
-  tipo TEXT NOT NULL CHECK (tipo IN ('feriado', 'folga', 'licenca', 'atestado')),
-  descricao TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, data)
-);
-
-CREATE INDEX IF NOT EXISTS idx_calendario_user_data ON calendario(user_id, data);
-
--- --------------------------------------------------------
--- 4. Row Level Security (RLS)
+-- 3. Row Level Security (RLS)
 -- --------------------------------------------------------
 ALTER TABLE registros ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE calendario ENABLE ROW LEVEL SECURITY;
 
--- Políticas para registros
+-- Politicas para registros
 CREATE POLICY "Users can only see their own records" ON registros
   FOR SELECT USING (auth.uid() = user_id);
 
@@ -69,7 +53,7 @@ CREATE POLICY "Users can only update their own records" ON registros
 CREATE POLICY "Users can only delete their own records" ON registros
   FOR DELETE USING (auth.uid() = user_id);
 
--- Políticas para profiles
+-- Politicas para profiles
 CREATE POLICY "Users can only see their own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
 
@@ -79,21 +63,8 @@ CREATE POLICY "Users can only insert their own profile" ON profiles
 CREATE POLICY "Users can only update their own profile" ON profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- Políticas para calendario
-CREATE POLICY "Users can only see their own calendar" ON calendario
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can only insert their own calendar" ON calendario
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can only update their own calendar" ON calendario
-  FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can only delete their own calendar" ON calendario
-  FOR DELETE USING (auth.uid() = user_id);
-
 -- --------------------------------------------------------
--- 5. Trigger: cria profile automaticamente no cadastro
+-- 4. Trigger: cria profile automaticamente no cadastro
 -- --------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -112,7 +83,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- --------------------------------------------------------
--- 6. Função para atualizar updated_at automaticamente
+-- 5. Funcao para atualizar updated_at automaticamente
 -- --------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -131,8 +102,3 @@ DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
--- --------------------------------------------------------
--- 7. Configurações adicionais do Supabase Auth (opcional)
--- --------------------------------------------------------
--- UPDATE auth.config SET enable_confirmations = false;

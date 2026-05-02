@@ -40,10 +40,10 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-sm glass rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-sm ios-card rounded-t-2xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up sm:animate-none max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white">Lançar ponto manual</h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           </button>
         </div>
@@ -56,7 +56,7 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
               value={data}
               max={new Date().toISOString().split('T')[0]}
               onChange={(e) => setData(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
             />
           </div>
           <div>
@@ -65,7 +65,7 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
               type="time"
               value={entrada}
               onChange={(e) => setEntrada(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
             />
           </div>
           <div>
@@ -74,7 +74,7 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
               type="time"
               value={intervalo}
               onChange={(e) => setIntervalo(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
             />
           </div>
           <div>
@@ -83,7 +83,7 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
               type="time"
               value={retorno}
               onChange={(e) => setRetorno(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
             />
           </div>
           <div>
@@ -92,7 +92,7 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
               type="time"
               value={saida}
               onChange={(e) => setSaida(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
+              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
             />
           </div>
         </div>

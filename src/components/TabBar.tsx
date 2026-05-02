@@ -17,7 +17,7 @@ export default function TabBar({ active, onChange }: TabBarProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
       <div className="max-w-md mx-auto px-4 pb-4 pt-2">
-        <div className="glass rounded-2xl flex items-center justify-around p-2 shadow-2xl">
+        <div className="ios-card rounded-2xl flex items-center justify-around p-2 shadow-2xl">
           {tabs.map((tab) => {
             const isActive = active === tab.id;
             const Icon = tab.icon;

@@ -267,7 +267,7 @@ export default function App() {
 
   if (carregando && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-black">
         <div className="w-10 h-10 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin" />
       </div>
     );
@@ -275,14 +275,14 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
         <LoginForm onLogin={() => {}} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white transition-colors">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-white transition-colors">
       <div className="max-w-md mx-auto px-4 py-6">
         <TabSlide activeTab={activeTab} direction={tabDirection}>
           {activeTab === 'ponto' && (

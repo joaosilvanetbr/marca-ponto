@@ -67,29 +67,29 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Header do mês */}
-      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="glass rounded-3xl p-4 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="ios-card rounded-2xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </motion.button>
           <div className="flex items-center gap-2 text-slate-800 dark:text-white font-semibold">
             <CalendarDays className="w-5 h-5 text-cyan-500" />
             {formatarMesAno(mesSelecionado + '-01')}
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </motion.button>
         </div>
       </motion.div>
 
       {/* Resumo do mês */}
-      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="glass rounded-3xl p-5 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="ios-card rounded-2xl p-5 shadow-xl">
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 text-center">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Total Trabalhado</div>
             <div className="text-2xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">{paraHora(dados.totalTrabalhado)}</div>
           </div>
-          <div className="rounded-2xl bg-white/40 dark:bg-slate-800/40 p-4 text-center">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
             <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Saldo do Mês</div>
             <div className={`text-2xl font-bold mt-1 tabular-nums ${dados.saldoMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {dados.saldoMes >= 0 ? '+' : ''}{paraHora(dados.saldoMes)}
@@ -106,7 +106,7 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
       </motion.div>
 
       {/* Lista de dias */}
-      <div className="glass rounded-3xl p-4 shadow-xl">
+      <div className="ios-card rounded-2xl p-4 shadow-xl">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4" /> Registros do mês
         </h3>
@@ -121,7 +121,7 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
                 className={`flex items-center gap-3 p-3 rounded-2xl transition-all ${
-                  isHoje ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border border-cyan-200/50 dark:border-cyan-800/50' : 'bg-white/30 dark:bg-slate-800/30'
+                  isHoje ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200/50 dark:border-cyan-800/50' : 'bg-slate-50 dark:bg-slate-800'
                 }`}
               >
                 <div className="text-center min-w-[3rem]">
@@ -148,7 +148,7 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                 </div>
                 {temRegistro && (
                   <div className="flex items-center gap-1">
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onEdit(item.reg!)} className="p-2 rounded-xl hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onEdit(item.reg!)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                       <Pencil className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleDelete(item.reg!.id!)} disabled={deletando === item.reg!.id} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">

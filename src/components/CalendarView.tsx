@@ -75,23 +75,23 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
       {/* Header do mês */}
-      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="glass rounded-3xl p-4 shadow-xl">
+      <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="ios-card rounded-2xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </motion.button>
           <div className="flex items-center gap-2 text-slate-800 dark:text-white font-semibold">
             <CalendarDays className="w-5 h-5 text-cyan-500" />
             {formatarMesAno(mesSelecionado + '-01')}
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </motion.button>
         </div>
       </motion.div>
 
       {/* Legenda */}
-      <div className="glass rounded-2xl p-3 shadow-xl">
+      <div className="ios-card rounded-2xl p-3 shadow-xl">
         <div className="flex flex-wrap gap-2 justify-center">
           {tiposConfig.map((t) => {
             const Icon = t.icon;
@@ -106,7 +106,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
       </div>
 
       {/* Grid do calendário */}
-      <div className="glass rounded-3xl p-4 shadow-xl">
+      <div className="ios-card rounded-2xl p-4 shadow-xl">
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
             <div key={d} className="text-center text-xs font-semibold text-slate-400 dark:text-slate-500 py-1">{d}</div>
@@ -135,8 +135,8 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
                   }
                 }}
                 className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all ${
-                  isSelecionado ? 'ring-2 ring-cyan-400 bg-cyan-50 dark:bg-cyan-900/30' : config ? `${config.bg} ${config.darkBg}` : 'hover:bg-white/40 dark:hover:bg-slate-800/40'
-                } ${isHoje && !config ? 'bg-slate-100 dark:bg-slate-800/50 font-bold' : ''}`}
+                  isSelecionado ? 'ring-2 ring-cyan-400 bg-cyan-50 dark:bg-cyan-950' : config ? `${config.bg} ${config.darkBg}` : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                } ${isHoje && !config ? 'bg-slate-100 dark:bg-slate-800 font-bold' : ''}`}
               >
                 <span className={`text-sm ${config ? config.cor : 'text-slate-700 dark:text-slate-200'}`}>
                   {dia.split('-')[2]}
@@ -156,7 +156,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="glass rounded-3xl p-5 shadow-xl space-y-4"
+            className="ios-card rounded-2xl p-5 shadow-xl space-y-4"
           >
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 dark:text-white">
@@ -180,7 +180,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setTipoSelecionado(t.tipo)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      ativo ? `${t.bg} ${t.darkBg} ${t.cor} ring-1 ring-current` : 'bg-white/40 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-700/60'
+                      ativo ? `${t.bg} ${t.darkBg} ${t.cor} ring-1 ring-current` : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -193,7 +193,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
             {/* Descrição */}
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Descrição (opcional)</label>
-              <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Feriado nacional, Consulta médica..." className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-slate-700/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400" />
+              <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Feriado nacional, Consulta médica..." className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400" />
             </div>
 
             <motion.button whileTap={{ scale: 0.96 }} onClick={handleSalvar} disabled={salvando} className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
@@ -204,7 +204,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
       </AnimatePresence>
 
       {/* Lista de dias marcados no mês */}
-      <div className="glass rounded-3xl p-4 shadow-xl">
+      <div className="ios-card rounded-2xl p-4 shadow-xl">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Dias marcados neste mês</h3>
         <div className="space-y-2 max-h-[30vh] overflow-y-auto">
           {calendario.filter((c) => c.data.startsWith(mesSelecionado)).length === 0 ? (
@@ -219,7 +219,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-white/30 dark:bg-slate-800/30"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800"
                 >
                   <div className={`w-9 h-9 rounded-lg ${config?.bg} ${config?.darkBg} flex items-center justify-center`}>
                     {Icon && <Icon className={`w-4 h-4 ${config?.cor}`} />}
