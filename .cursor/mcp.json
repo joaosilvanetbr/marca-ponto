@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "supabase-postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:{{YOUR_PASSWORD}}@db.xllstygjaavytitvrfrz.supabase.co:5432/postgres"
+      ],
+      "env": {}
+    },
+    "supabase-api": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "supabase-agent-mcp"
+      ],
+      "env": {
+        "SUPABASE_URL": "https://xllstygjaavytitvrfrz.supabase.co",
+        "SUPABASE_KEY": "{{YOUR_ANON_KEY}}",
+        "SUPABASE_DB_URL": "postgresql://postgres:{{YOUR_PASSWORD}}@db.xllstygjaavytitvrfrz.supabase.co:5432/postgres"
+      }
+    }
+  }
+}
