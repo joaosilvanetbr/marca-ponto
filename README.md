@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# PontoGO
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PontoGO é um PWA (Progressive Web App) para controle de jornada de trabalho. Registre seus pontos de entrada, intervalo, retorno e saída, acompanhe seu banco de horas e acesse seu histórico mensal de qualquer lugar.
 
-Currently, two official plugins are available:
+## Como funciona
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+O app tem três abas principais:
 
-## React Compiler
+### Ponto
+- Veja a hora atual e uma previsão de saída baseada na sua jornada
+- Registre seus pontos com um toque: **Entrada**, **Intervalo**, **Retorno** e **Saída**
+- Acompanhe o tempo trabalhado e o saldo do dia em tempo real
+- Edite ou remova pontos individualmente se precisar ajustar
+- Funciona offline: seus registros ficam salvos localmente e sincronizam automaticamente quando a internet voltar
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Histórico
+- Navegue por meses anteriores e veja todos os dias do mês
+- Veja um resumo com: horas trabalhadas, saldo acumulado, dias trabalhados e média por dia
+- Filtre entre todos os registros, dias com ponto e dias faltantes
+- Exporte seus dados em CSV para planilha
+- Edite ou exclua registros antigos
 
-## Expanding the ESLint configuration
+### Configurações
+- Altere sua jornada diária (padrão: 8h)
+- Ative ou desative o tema escuro
+- Ative notificações para receber lembretes de ponto
+- Edite seu nome, email e senha
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Destaques
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **100% offline**: registra pontos mesmo sem internet e sincroniza depois
+- **Notificações**: lembretes automáticos para não esquecer de bater o ponto
+- **Vibração (haptic feedback)**: confirmação tátil ao registrar ponto
+- **App Badge**: badge no ícone mostrando registros pendentes de sincronização
+- **Swipe**: deslize entre as abas como em apps nativos
+- **Tema escuro**: interface adaptável para dia e noite
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Tecnologias
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- React + TypeScript + Tailwind CSS + shadcn/ui
+- Supabase (Auth + PostgreSQL + Realtime)
+- Vite + PWA (vite-plugin-pwa)
+- Framer Motion (animações)
+- TanStack Virtual (scroll otimizado)
