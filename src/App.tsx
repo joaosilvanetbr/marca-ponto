@@ -272,6 +272,15 @@ export default function App() {
     }
   }
 
+  // Recuperacao de senha: tem prioridade sobre tudo — mostra a tela de reset
+  if (isRecovery) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
+        <ResetPassword onVoltar={() => { setIsRecovery(false); window.location.hash = ''; }} />
+      </div>
+    );
+  }
+
   if (carregando && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-black">
@@ -283,11 +292,7 @@ export default function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
-        {isRecovery ? (
-          <ResetPassword onVoltar={() => { setIsRecovery(false); window.location.hash = ''; }} />
-        ) : (
-          <LoginForm onLogin={() => {}} />
-        )}
+        <LoginForm onLogin={() => {}} />
       </div>
     );
   }
