@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { Loader2, CheckCircle2, KeyRound, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, KeyRound, ArrowLeft, ShieldAlert } from 'lucide-react';
 
 interface ResetPasswordProps {
   onVoltar: () => void;
@@ -14,44 +14,53 @@ export default function ResetPassword({ onVoltar }: ResetPasswordProps) {
   const [sucesso, setSucesso] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [verificando, setVerificando] = useState(true);
+  const [tokenValido, setTokenValido] = useState(false);
 
-  // Verifica se tem token de recuperação na URL
+  // Verifica se tem token de recuperação válido via Supabase
   useEffect(() => {
-    // O Supabase envia o token no hash da URL: #access_token=xxx&refresh_token=yyy&type=recovery
-    const hash = window.location.hash;
-    if (hash && (hash.includes('type=recovery') || hash.includes('access_token'))) {
-      // Troca o token de recuperação por uma sessão temporária
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    async function verificarToken() {
+      try {
+        // O Supabase client já processa tokens no hash automaticamente.
+        // Aguardamos um momento para o client processar o hash e disparar o evento.
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session) {
+          setTokenValido(true);
           setVerificando(false);
-        } else {
-          // Tenta processar o hash manualmente
-          supabase.auth.onAuthStateChange((event) => {
-            if (event === 'PASSWORD_RECOVERY') {
-              setVerificando(false);
-            }
-          });
-          // Fallback: tenta setar a sessão do hash
-          const params = new URLSearchParams(hash.substring(1));
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-          if (accessToken) {
-            supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken || '',
-            }).then(() => {
-              setVerificando(false);
-            });
-          } else {
-            setVerificando(false);
-            setErro('Link de recuperação inválido ou expirado.');
-          }
+          return;
         }
-      });
-    } else {
-      setVerificando(false);
-      setErro('Link de recuperação não encontrado.');
+
+        // Fallback: escuta o evento PASSWORD_RECOVERY
+        const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+            setTokenValido(true);
+            setVerificando(false);
+            listener.subscription.unsubscribe();
+            if (timeoutId) clearTimeout(timeoutId);
+          }
+        });
+
+        // Timeout de segurança: se nada acontecer em 3s, mostra erro
+        timeoutId = setTimeout(() => {
+          listener.subscription.unsubscribe();
+          setVerificando(false);
+          setTokenValido(false);
+          setErro('Link de recuperação inválido ou expirado.');
+        }, 3000);
+      } catch {
+        setVerificando(false);
+        setTokenValido(false);
+        setErro('Link de recuperação inválido ou expirado.');
+      }
     }
+
+    verificarToken();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -89,6 +98,21 @@ export default function ResetPassword({ onVoltar }: ResetPasswordProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-black">
         <div className="w-10 h-10 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!tokenValido) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-black p-4">
+        <div className="w-full max-w-sm ios-card rounded-2xl p-8 shadow-2xl text-center">
+          <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Link inválido</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{erro || 'O link de recuperação não é válido ou já expirou.'}</p>
+          <button onClick={onVoltar} className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline flex items-center justify-center gap-1 mx-auto">
+            <ArrowLeft className="w-3.5 h-3.5" /> Voltar para o login
+          </button>
+        </div>
       </div>
     );
   }
@@ -131,7 +155,8 @@ export default function ResetPassword({ onVoltar }: ResetPasswordProps) {
           </div>
 
           {erro && (
-            <div className="text-sm text-red-500 bg-red-100 dark:bg-red-950 rounded-lg p-3">
+            <div className="text-sm text-red-500 bg-red-100 dark:bg-red-950 rounded-lg p-3 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
               {erro}
             </div>
           )}

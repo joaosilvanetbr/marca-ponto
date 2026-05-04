@@ -20,9 +20,45 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
   const [saida, setSaida] = useState('17:00');
   const [carregando, setCarregando] = useState(false);
 
+  function validarFormulario(): string | null {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataRegistro = new Date(data + 'T12:00:00');
+    const diffDias = (hoje.getTime() - dataRegistro.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (dataRegistro > hoje) {
+      return 'Não é possível lançar ponto para datas futuras.';
+    }
+    if (diffDias > 90) {
+      return 'Não é possível lançar ponto para datas anteriores a 90 dias.';
+    }
+
+    // Validacao de consistencia de horarios
+    const horarios = [
+      { val: entrada, nome: 'Entrada' },
+      { val: intervalo, nome: 'Intervalo' },
+      { val: retorno, nome: 'Retorno' },
+      { val: saida, nome: 'Saída' },
+    ];
+    const preenchidos = horarios.filter((h) => h.val);
+    for (let i = 1; i < preenchidos.length; i++) {
+      if (preenchidos[i].val! < preenchidos[i - 1].val!) {
+        return `${preenchidos[i].nome} não pode ser anterior a ${preenchidos[i - 1].nome}.`;
+      }
+    }
+
+    return null;
+  }
+
   async function handleSalvar() {
     setCarregando(true);
     try {
+      const erroValidacao = validarFormulario();
+      if (erroValidacao) {
+        alert(erroValidacao);
+        setCarregando(false);
+        return;
+      }
       await onSalvar({
         user_id: userId,
         data,

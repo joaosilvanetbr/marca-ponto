@@ -31,28 +31,31 @@ export async function getRegistroDoDia(userId: string, data: string): Promise<Re
   return reg;
 }
 
-export async function upsertRegistro(registro: Registro): Promise<void> {
+export async function upsertRegistro(userId: string, registro: Registro): Promise<void> {
+  const safeRegistro = { ...registro, user_id: userId };
   const { error } = await supabase
     .from('registros')
-    .upsert(registro, { onConflict: 'user_id,data' });
+    .upsert(safeRegistro, { onConflict: 'user_id,data' });
 
   if (error) throw error;
 }
 
-export async function updateRegistro(id: number, updates: Partial<Registro>): Promise<void> {
+export async function updateRegistro(userId: string, id: number, updates: Partial<Registro>): Promise<void> {
   const { error } = await supabase
     .from('registros')
     .update(updates)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }
 
-export async function deleteRegistro(id: number): Promise<void> {
+export async function deleteRegistro(userId: string, id: number): Promise<void> {
   const { error } = await supabase
     .from('registros')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }

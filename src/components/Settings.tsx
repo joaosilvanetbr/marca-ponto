@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Profile } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
+import { logError } from '@/lib/error-utils';
 import { motion } from 'framer-motion';
 import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft } from 'lucide-react';
 
@@ -61,7 +62,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
       await onProfileUpdate();
       showStatus('saved', 'Salvo!', 2000);
     } catch (err: unknown) {
-      console.error('[Settings] Erro ao salvar:', err);
+      logError('Settings.autoSave', err);
       showStatus('error', 'Erro ao salvar', 4000);
     }
   }

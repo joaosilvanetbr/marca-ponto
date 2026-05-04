@@ -158,12 +158,78 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 -- ============================================
--- 6. REGRAS DE AUTH (redirecionamento)
+-- 6. TABELA: audit_log (rastreamento de alteracoes)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.audit_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    tabela TEXT NOT NULL,
+    registro_id TEXT,
+    acao TEXT NOT NULL CHECK (acao IN ('INSERT', 'UPDATE', 'DELETE')),
+    dados_anteriores JSONB,
+    dados_novos JSONB,
+    ip_address INET,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_user ON public.audit_log(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_log_registro ON public.audit_log(tabela, registro_id);
+
+ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    CREATE POLICY "Users can view own audit logs" ON public.audit_log FOR SELECT USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Funcao: registra alteracoes na tabela registros
+-- Usa COALESCE(auth.uid(), NEW/OLD.user_id) para funcionar tambem via API/service_role
+CREATE OR REPLACE FUNCTION public.handle_audit_registros()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO public.audit_log (user_id, tabela, registro_id, acao, dados_novos)
+        VALUES (COALESCE(auth.uid(), NEW.user_id), 'registros', NEW.id::TEXT, 'INSERT', row_to_json(NEW));
+        RETURN NEW;
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO public.audit_log (user_id, tabela, registro_id, acao, dados_anteriores, dados_novos)
+        VALUES (COALESCE(auth.uid(), NEW.user_id), 'registros', NEW.id::TEXT, 'UPDATE', row_to_json(OLD), row_to_json(NEW));
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        INSERT INTO public.audit_log (user_id, tabela, registro_id, acao, dados_anteriores)
+        VALUES (COALESCE(auth.uid(), OLD.user_id), 'registros', OLD.id::TEXT, 'DELETE', row_to_json(OLD));
+        RETURN OLD;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger: audit_registros
+DROP TRIGGER IF EXISTS audit_registros ON public.registros;
+CREATE TRIGGER audit_registros
+    AFTER INSERT OR UPDATE OR DELETE ON public.registros
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_audit_registros();
+
+-- ============================================
+-- 7. REGRAS DE AUTH (redirecionamento)
 -- ============================================
 
 -- Configura o site URL para o domínio correto
 -- Substitua pelo seu domínio real:
 -- UPDATE auth.config SET site_url = 'https://pontoteste.js.net.br';
+
+-- ============================================
+-- 8. NOTAS DE MIGRACAO
+-- ============================================
+
+-- RECOMENDACAO: Migrar IDs de registros e calendario de SERIAL para UUID
+-- para mitigar ataques de IDOR (Insecure Direct Object Reference).
+-- 
+-- Passos para migracao (requer backup):
+-- 1. ALTER TABLE public.registros ALTER COLUMN id TYPE UUID USING uuid_generate_v4();
+-- 2. ALTER TABLE public.calendario ALTER COLUMN id TYPE UUID USING uuid_generate_v4();
+-- 3. Atualizar tipos TypeScript: Registro.id e DiaCalendario.id para string
 
 -- ============================================
 -- FIM

@@ -1,10 +1,26 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { LogIn, UserPlus, Loader2, KeyRound, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { LogIn, UserPlus, Loader2, KeyRound, ArrowLeft, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface LoginFormProps {
   onLogin: () => void;
+}
+
+const MAX_ATTEMPTS = 5;
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minuto
+
+function isRateLimited(attempts: number[], now: number): boolean {
+  const recent = attempts.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  return recent.length >= MAX_ATTEMPTS;
+}
+
+function validatePasswordStrength(password: string): string | null {
+  if (password.length < 8) return 'A senha deve ter pelo menos 8 caracteres.';
+  if (!/[a-z]/.test(password)) return 'A senha deve conter pelo menos uma letra minúscula.';
+  if (!/[A-Z]/.test(password)) return 'A senha deve conter pelo menos uma letra maiúscula.';
+  if (!/[0-9]/.test(password)) return 'A senha deve conter pelo menos um número.';
+  return null;
 }
 
 export default function LoginForm({ onLogin }: LoginFormProps) {
@@ -15,26 +31,64 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const [sucesso, setSucesso] = useState('');
   const [carregando, setCarregando] = useState(false);
 
+  // Rate limiting por modo
+  const loginAttempts = useRef<number[]>([]);
+  const signupAttempts = useRef<number[]>([]);
+  const recoverAttempts = useRef<number[]>([]);
+
+  function getAttemptsForMode(m: typeof modo): React.MutableRefObject<number[]> {
+    if (m === 'login') return loginAttempts;
+    if (m === 'cadastro') return signupAttempts;
+    return recoverAttempts;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
     setSucesso('');
     setCarregando(true);
 
+    const now = Date.now();
+    const attempts = getAttemptsForMode(modo);
+    attempts.current = attempts.current.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+
+    if (isRateLimited(attempts.current, now)) {
+      setErro('Muitas tentativas. Aguarde 1 minuto antes de tentar novamente.');
+      setCarregando(false);
+      return;
+    }
+
     try {
       if (modo === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        attempts.current.push(now);
         onLogin();
       } else if (modo === 'cadastro') {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const pwdError = validatePasswordStrength(password);
+        if (pwdError) {
+          setErro(pwdError);
+          setCarregando(false);
+          return;
+        }
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        onLogin();
+        attempts.current.push(now);
+
+        // Verifica se o email precisa de confirmacao
+        const needsEmailConfirmation = data.user?.identities?.length === 0 || !data.session;
+        if (needsEmailConfirmation) {
+          setSucesso('Conta criada! Verifique seu email para confirmar o cadastro antes de fazer login.');
+          setPassword('');
+        } else {
+          onLogin();
+        }
       } else if (modo === 'recuperar') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + '/',
         });
         if (error) throw error;
+        attempts.current.push(now);
         setSucesso('Email de recuperação enviado! Verifique sua caixa de entrada.');
         setEmail('');
       }
@@ -87,11 +141,20 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                 className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
                 placeholder="••••••••"
               />
+              {modo === 'cadastro' && (
+                <div className="mt-2 text-xs text-slate-400 dark:text-slate-500 space-y-0.5">
+                  <p className={password.length >= 8 ? 'text-emerald-500' : ''}>• Mínimo 8 caracteres</p>
+                  <p className={/[a-z]/.test(password) ? 'text-emerald-500' : ''}>• Pelo menos uma letra minúscula</p>
+                  <p className={/[A-Z]/.test(password) ? 'text-emerald-500' : ''}>• Pelo menos uma letra maiúscula</p>
+                  <p className={/[0-9]/.test(password) ? 'text-emerald-500' : ''}>• Pelo menos um número</p>
+                </div>
+              )}
             </div>
           )}
 
           {erro && (
-            <div className="text-sm text-red-500 bg-red-100 dark:bg-red-950 rounded-lg p-3">
+            <div className="text-sm text-red-500 bg-red-100 dark:bg-red-950 rounded-lg p-3 flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
               {erro}
             </div>
           )}

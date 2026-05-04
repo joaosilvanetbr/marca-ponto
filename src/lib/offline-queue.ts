@@ -8,25 +8,72 @@ interface QueueItem {
   payload: unknown;
   timestamp: number;
   retries: number;
+  userId: string;
 }
 
 const QUEUE_KEY = 'meu-ponto-queue';
 const MAX_RETRIES = 3;
 
-function getQueue(): QueueItem[] {
+/**
+ * Criptografia simples para offline queue usando XOR com chave derivada do userId.
+ * Nao e criptografia forte, mas impede leitura casual no localStorage.
+ */
+function deriveKey(userId: string): number[] {
+  const key: number[] = [];
+  for (let i = 0; i < userId.length; i++) {
+    key.push(userId.charCodeAt(i) % 256);
+  }
+  // Se userId for vazio, usa uma chave padrao nao-nula
+  if (key.length === 0) key.push(42);
+  return key;
+}
+
+function xorEncryptDecrypt(input: string, userId: string): string {
+  const key = deriveKey(userId);
+  const output: number[] = [];
+  for (let i = 0; i < input.length; i++) {
+    output.push(input.charCodeAt(i) ^ key[i % key.length]);
+  }
+  return String.fromCharCode(...output);
+}
+
+function encryptQueue(queue: QueueItem[], userId: string): string {
+  const json = JSON.stringify(queue);
+  const scrambled = xorEncryptDecrypt(json, userId);
+  return btoa(scrambled);
+}
+
+function decryptQueue(encrypted: string, userId: string): QueueItem[] {
   try {
-    return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]');
+    const scrambled = atob(encrypted);
+    const json = xorEncryptDecrypt(scrambled, userId);
+    return JSON.parse(json);
   } catch {
     return [];
   }
 }
 
-function setQueue(queue: QueueItem[]): void {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+function getQueue(userId: string): QueueItem[] {
+  try {
+    const encrypted = localStorage.getItem(QUEUE_KEY);
+    if (!encrypted) return [];
+    return decryptQueue(encrypted, userId);
+  } catch {
+    return [];
+  }
 }
 
-export function addToQueue(type: QueueItem['type'], payload: unknown, table: QueueItem['table'] = 'registros'): void {
-  const queue = getQueue();
+function setQueue(queue: QueueItem[], userId: string): void {
+  try {
+    const encrypted = encryptQueue(queue, userId);
+    localStorage.setItem(QUEUE_KEY, encrypted);
+  } catch {
+    // Fallback: nao salva se criptografia falhar
+  }
+}
+
+export function addToQueue(type: QueueItem['type'], payload: unknown, table: QueueItem['table'] = 'registros', userId: string = ''): void {
+  const queue = getQueue(userId);
   queue.push({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     type,
@@ -34,16 +81,31 @@ export function addToQueue(type: QueueItem['type'], payload: unknown, table: Que
     payload,
     timestamp: Date.now(),
     retries: 0,
+    userId,
   });
-  setQueue(queue);
+  setQueue(queue, userId);
 }
 
-export function getPendingCount(): number {
-  return getQueue().length;
+export function getPendingCount(userId: string = ''): number {
+  if (!userId) {
+    // Fallback: tenta ler sem descriptografar (backwards compat)
+    try {
+      const raw = localStorage.getItem(QUEUE_KEY);
+      if (!raw) return 0;
+      // Se parece JSON puro (backwards compat), conta length
+      if (raw.trim().startsWith('[')) {
+        return JSON.parse(raw).length;
+      }
+      return getQueue(userId).length;
+    } catch {
+      return 0;
+    }
+  }
+  return getQueue(userId).length;
 }
 
-export async function syncQueue(): Promise<{ success: number; failed: number }> {
-  const queue = getQueue();
+export async function syncQueue(userId: string): Promise<{ success: number; failed: number }> {
+  const queue = getQueue(userId);
   if (queue.length === 0) return { success: 0, failed: 0 };
 
   let success = 0;
@@ -51,6 +113,11 @@ export async function syncQueue(): Promise<{ success: number; failed: number }> 
   const remaining: QueueItem[] = [];
 
   for (const item of queue) {
+    // Seguranca: descarta itens de outros usuarios (ex: localStorage manipulado)
+    if (item.userId && item.userId !== userId) {
+      failed++;
+      continue;
+    }
     try {
       if (item.table === 'calendario') {
         if (item.type === 'upsert') {
@@ -63,12 +130,12 @@ export async function syncQueue(): Promise<{ success: number; failed: number }> 
         }
       } else {
         if (item.type === 'upsert') {
-          await upsertRegistro(item.payload as Registro);
+          await upsertRegistro(userId, item.payload as Registro);
         } else if (item.type === 'update') {
           const { id, ...updates } = item.payload as { id: number } & Partial<Registro>;
-          await updateRegistro(id, updates);
+          await updateRegistro(userId, id, updates);
         } else if (item.type === 'delete') {
-          await deleteRegistro(item.payload as number);
+          await deleteRegistro(userId, item.payload as number);
         }
       }
       success++;
@@ -82,10 +149,10 @@ export async function syncQueue(): Promise<{ success: number; failed: number }> 
     }
   }
 
-  setQueue(remaining);
+  setQueue(remaining, userId);
   return { success, failed };
 }
 
-export function clearQueue(): void {
+export function clearQueue(userId: string = ''): void {
   localStorage.removeItem(QUEUE_KEY);
 }

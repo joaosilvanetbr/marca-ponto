@@ -13,10 +13,11 @@ const client = createClient(url, key);
 /**
  * Busca o registro de ponto de uma data específica
  */
-export async function buscarRegistro(data: string) {
+export async function buscarRegistro(userId: string, data: string) {
   const { data: reg, error } = await client
     .from('registros')
     .select('*')
+    .eq('user_id', userId)
     .eq('data', data)
     .maybeSingle();
   if (error) throw error;
@@ -26,10 +27,11 @@ export async function buscarRegistro(data: string) {
 /**
  * Lista todos os registros de um mês
  */
-export async function listarRegistros(mes: string) {
+export async function listarRegistros(userId: string, mes: string) {
   const { data, error } = await client
     .from('registros')
     .select('*')
+    .eq('user_id', userId)
     .gte('data', `${mes}-01`)
     .lte('data', `${mes}-31`)
     .order('data', { ascending: true });
@@ -40,10 +42,11 @@ export async function listarRegistros(mes: string) {
 /**
  * Obtém configurações do usuário
  */
-export async function buscarConfiguracoes() {
+export async function buscarConfiguracoes(userId: string) {
   const { data, error } = await client
     .from('profiles')
     .select('*')
+    .eq('id', userId)
     .single();
   if (error) throw error;
   return data;
@@ -52,9 +55,9 @@ export async function buscarConfiguracoes() {
 /**
  * Calcula estatísticas do mês
  */
-export async function estatisticasMes(mes: string) {
-  const registros = await listarRegistros(mes);
-  const profile = await buscarConfiguracoes();
+export async function estatisticasMes(userId: string, mes: string) {
+  const registros = await listarRegistros(userId, mes);
+  const profile = await buscarConfiguracoes(userId);
   
   let minutosTrabalhados = 0;
   let saldoAcumulado = 0;
@@ -92,9 +95,9 @@ export async function estatisticasMes(mes: string) {
 /**
  * Exporta todos os dados para backup JSON
  */
-export async function exportarDados() {
-  const { data: registros } = await client.from('registros').select('*').order('data');
-  const { data: profile } = await client.from('profiles').select('*').single();
+export async function exportarDados(userId: string) {
+  const { data: registros } = await client.from('registros').select('*').eq('user_id', userId).order('data');
+  const { data: profile } = await client.from('profiles').select('*').eq('id', userId).single();
   
   return {
     exportado_em: new Date().toISOString(),
@@ -106,9 +109,9 @@ export async function exportarDados() {
 /**
  * Resumo diário: compara entrada/saída com jornada esperada
  */
-export async function resumoDia(data: string) {
-  const reg = await buscarRegistro(data);
-  const config = await buscarConfiguracoes();
+export async function resumoDia(userId: string, data: string) {
+  const reg = await buscarRegistro(userId, data);
+  const config = await buscarConfiguracoes(userId);
   
   if (!reg || !reg.entrada) {
     return { status: 'sem_registro', mensagem: 'Nenhum registro encontrado para esta data' };

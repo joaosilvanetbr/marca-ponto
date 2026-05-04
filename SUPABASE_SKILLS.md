@@ -24,14 +24,14 @@ Edite o arquivo `.cursor/mcp.json` ou `~/.cursor/mcp.json`:
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
-        "postgresql://postgres:SUA_SENHA@db.xllstygjaavytitvrfrz.supabase.co:5432/postgres"
+        "postgresql://postgres:SUA_SENHA@db.SEU_PROJETO.supabase.co:5432/postgres"
       ]
     }
   }
 }
 ```
 
-**Substitua `SUA_SENHA` pela senha do banco** (encontrada em: Supabase Dashboard → Settings → Database → Connection string → URI).
+**Substitua `SEU_PROJETO` pelo project ref e `SUA_SENHA` pela senha do banco** (encontrada em: Supabase Dashboard → Settings → Database → Connection string → URI).
 
 ### 3. Usar no Cursor IDE
 
@@ -50,16 +50,16 @@ O arquivo `src/lib/supabase-skill.ts` já está no projeto. Use no código:
 import { estatisticasMes, resumoDia, exportarDados } from '@/lib/supabase-skill';
 
 // Estatisticas do mes
-const stats = await estatisticasMes('2026-05');
+const stats = await estatisticasMes(userId, '2026-05');
 console.log(stats.horasTrabalhadas); // "160h 30m"
 console.log(stats.saldoFormatado);   // "+2h 15m"
 
 // Resumo de um dia especifico
-const dia = await resumoDia('2026-05-03');
+const dia = await resumoDia(userId, '2026-05-03');
 console.log(dia.mensagem);
 
 // Backup JSON
-const backup = await exportarDados();
+const backup = await exportarDados(userId);
 ```
 
 ---
@@ -67,10 +67,10 @@ const backup = await exportarDados();
 ## Connection String (para referencia)
 
 ```
-postgresql://postgres:[SUA_SENHA]@db.xllstygjaavytitvrfrz.supabase.co:5432/postgres
+postgresql://postgres:[SUA_SENHA]@db.[SEU_PROJETO].supabase.co:5432/postgres
 ```
 
-**Host:** db.xllstygjaavytitvrfrz.supabase.co  
+**Host:** db.[SEU_PROJETO].supabase.co  
 **Port:** 5432  
 **Database:** postgres  
 **User:** postgres  

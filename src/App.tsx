@@ -4,6 +4,7 @@ import type { Registro, Profile, Tab } from '@/types';
 import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistro, getProfile } from '@/lib/supabase';
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { hoje, mesAtual, agora } from '@/lib/time-utils';
+import { logError } from '@/lib/error-utils';
 import { useLembretes } from '@/hooks/useLembretes';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -127,11 +128,14 @@ export default function App() {
   // Atualiza contagem de pendentes periodicamente
   useEffect(() => {
     const interval = setInterval(() => {
-      const queue = JSON.parse(localStorage.getItem('meu-ponto-queue') || '[]');
-      setPendingCount(queue.length);
+      if (user) {
+        import('@/lib/offline-queue').then(({ getPendingCount }) => {
+          setPendingCount(getPendingCount(user));
+        });
+      }
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   // Checa auth inicial
   useEffect(() => {
@@ -176,7 +180,7 @@ export default function App() {
         document.documentElement.classList.remove('dark');
       }
     } catch (err) {
-      console.error('Erro carregando dados:', err);
+      logError('App.carregarDados', err);
     } finally {
       setCarregando(false);
     }
@@ -213,12 +217,12 @@ export default function App() {
 
     if (isOnline) {
       try {
-        await upsertRegistro(novo);
+        await upsertRegistro(user, novo);
       } catch {
-        addToQueue('upsert', novo);
+        addToQueue('upsert', novo, 'registros', user);
       }
     } else {
-      addToQueue('upsert', novo);
+      addToQueue('upsert', novo, 'registros', user);
     }
 
     setRegistroHoje(novo);
@@ -237,12 +241,12 @@ export default function App() {
     if (syncing) return;
     setSyncing(true);
     try {
-      const result = await syncQueue();
+      const result = await syncQueue(user);
       if (result.success > 0) {
         await carregarDados();
       }
     } catch (err) {
-      console.error('Sync error:', err);
+      logError('App.handleSync', err);
     } finally {
       setSyncing(false);
     }
@@ -250,7 +254,7 @@ export default function App() {
 
   async function handleDelete(id: number) {
     if (!isOnline) {
-      addToQueue('delete', id);
+      addToQueue('delete', id, 'registros', user);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== id));
       if (registroHoje?.id === id) {
         setRegistroHoje(null);
@@ -258,29 +262,29 @@ export default function App() {
       return;
     }
     try {
-      await deleteRegistro(id);
+      await deleteRegistro(user, id);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== id));
       if (registroHoje?.id === id) {
         setRegistroHoje(null);
       }
     } catch {
-      addToQueue('delete', id);
+      addToQueue('delete', id, 'registros', user);
     }
   }
 
   async function handleUpdate(id: number, updates: Partial<Registro>) {
     if (!isOnline) {
-      addToQueue('update', { id, ...updates });
+      addToQueue('update', { id, ...updates }, 'registros', user);
       const updated = { ...registroHoje, ...updates, id } as Registro;
       setRegistroHoje(updated);
       setRegistrosMes((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
       return;
     }
     try {
-      await upsertRegistro({ ...registroHoje, ...updates, id } as Registro);
+      await upsertRegistro(user, { ...registroHoje, ...updates, id } as Registro);
       await carregarDados();
     } catch {
-      addToQueue('update', { id, ...updates });
+      addToQueue('update', { id, ...updates }, 'registros', user);
     }
   }
 
@@ -293,17 +297,17 @@ export default function App() {
   async function handleLimparDia() {
     if (!registroHoje?.id) return;
     if (!isOnline) {
-      addToQueue('delete', registroHoje.id);
+      addToQueue('delete', registroHoje.id, 'registros', user);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== registroHoje!.id));
       setRegistroHoje(null);
       return;
     }
     try {
-      await deleteRegistro(registroHoje.id);
+      await deleteRegistro(user, registroHoje.id);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== registroHoje!.id));
       setRegistroHoje(null);
     } catch {
-      addToQueue('delete', registroHoje.id);
+      addToQueue('delete', registroHoje.id, 'registros', user);
     }
   }
   async function handleLancamentoManual(registro: Registro) {
@@ -311,10 +315,10 @@ export default function App() {
     const fullRegistro = { ...registro, user_id: user };
     try {
       if (isOnline) {
-        await upsertRegistro(fullRegistro);
+        await upsertRegistro(user, fullRegistro);
         await carregarDados();
       } else {
-        addToQueue('upsert', fullRegistro);
+        addToQueue('upsert', fullRegistro, 'registros', user);
         setRegistrosMes((prev) => {
           const idx = prev.findIndex((r) => r.data === fullRegistro.data);
           if (idx >= 0) {
@@ -327,7 +331,7 @@ export default function App() {
       }
       setLancamentoAberto(false);
     } catch (err) {
-      console.error('Erro ao lançar ponto manual:', err);
+      logError('App.handleLancamentoManual', err);
     }
   }
 
