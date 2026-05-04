@@ -32,7 +32,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         onLogin();
       } else if (modo === 'recuperar') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: 'https://2yx7ec5msx23q.kimi.page/',
         });
         if (error) throw error;
         setSucesso('Email de recuperação enviado! Verifique sua caixa de entrada.');
