@@ -3,15 +3,17 @@ import type { Profile } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, CheckCircle2, User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 interface SettingsProps {
   profile: Profile | null;
   userEmail: string;
   onProfileUpdate: () => Promise<void>;
+  notificacaoAtivada?: boolean;
+  onToggleNotificacao?: () => void;
 }
 
-export default function Settings({ profile, userEmail, onProfileUpdate }: SettingsProps) {
+export default function Settings({ profile, userEmail, onProfileUpdate, notificacaoAtivada = false, onToggleNotificacao }: SettingsProps) {
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
 
@@ -306,6 +308,27 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
             <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'}`} />
           </button>
         </div>
+
+        {/* Notificações */}
+        {onToggleNotificacao && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${notificacaoAtivada ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                {notificacaoAtivada ? <Bell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> : <BellOff className="w-5 h-5 text-slate-500 dark:text-slate-400" />}
+              </div>
+              <div>
+                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Notificações</div>
+                <div className="text-xs text-slate-400 dark:text-slate-500">Lembretes de ponto</div>
+              </div>
+            </div>
+            <button
+              onClick={onToggleNotificacao}
+              className={`relative w-12 h-7 rounded-full transition-colors ${notificacaoAtivada ? 'bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+            >
+              <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${notificacaoAtivada ? 'translate-x-5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+        )}
 
         {/* Jornada */}
         <div>

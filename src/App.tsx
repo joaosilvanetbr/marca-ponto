@@ -5,6 +5,10 @@ import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistr
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { hoje, mesAtual, agora } from '@/lib/time-utils';
 import { useLembretes } from '@/hooks/useLembretes';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useAppBadge } from '@/hooks/useAppBadge';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import LoginForm from '@/components/LoginForm';
 import ResetPassword from '@/components/ResetPassword';
 import ClockCard from '@/components/ClockCard';
@@ -12,6 +16,7 @@ import BankHistory from '@/components/BankHistory';
 import Settings from '@/components/Settings';
 import EditModal from '@/components/EditModal';
 import LancamentoManual from '@/components/LancamentoManual';
+import SkeletonScreen from '@/components/SkeletonScreen';
 import TabBar from '@/components/TabBar';
 import { TabSlide } from '@/components/animations';
 
@@ -39,21 +44,72 @@ export default function App() {
 
   const tabOrder: Tab[] = ['ponto', 'historico', 'config'];
 
-  const handleTabChange = (tab: Tab) => {
+  const handleTabChange = useCallback((tab: Tab) => {
     const currentIdx = tabOrder.indexOf(prevTab);
     const newIdx = tabOrder.indexOf(tab);
     setTabDirection(newIdx > currentIdx ? 'right' : 'left');
     setPrevTab(tab);
     setActiveTab(tab);
-  };
+  }, [prevTab]);
 
-  // Lembretes/notificações
+  // Swipe entre abas
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(0);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setTouchStartY(touch.clientY);
+  }, []);
+
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touch = e.changedTouches[0];
+    const diffX = touch.clientX - touchStartX;
+    const diffY = touch.clientY - touchStartY;
+
+    // Só processa se for movimento horizontal significativo
+    if (Math.abs(diffX) < 80 || Math.abs(diffY) > Math.abs(diffX)) return;
+
+    const currentIdx = tabOrder.indexOf(activeTab);
+
+    if (diffX < 0 && currentIdx < tabOrder.length - 1) {
+      // Swipe para esquerda → próxima aba
+      handleTabChange(tabOrder[currentIdx + 1]);
+    } else if (diffX > 0 && currentIdx > 0) {
+      // Swipe para direita → aba anterior
+      handleTabChange(tabOrder[currentIdx - 1]);
+    }
+  }, [touchStartX, touchStartY, activeTab, handleTabChange]);
+
+  // Notificações do sistema
+  const { ativado: notifAtivado, toggle: toggleNotif, notificar } = useNotifications();
+
+  // Feedback tátil (vibração) ao bater ponto
+  const haptic = useHaptic();
+
+  // App Badge — mostra badge no ícone quando tem sync pendente
+  const { setBadge, clearBadge } = useAppBadge();
+
+  // Atualiza badge quando mudam os pendentes
+  useEffect(() => {
+    if (pendingCount > 0) {
+      setBadge(pendingCount);
+    } else {
+      clearBadge();
+    }
+  }, [pendingCount, setBadge, clearBadge]);
+
+  // Theme color dinâmico (status bar do navegador)
+  useThemeColor(profile?.dark_mode || false);
+
+  // Lembretes/notificações — integra com notificações do sistema
   useLembretes(
     registroHoje?.entrada || null,
     registroHoje?.intervalo || null,
     registroHoje?.retorno || null,
     registroHoje?.saida || null,
-    profile?.jornada || '08:00'
+    profile?.jornada || '08:00',
+    notifAtivado ? notificar : undefined
   );
 
   // Monitora online/offline
@@ -139,6 +195,9 @@ export default function App() {
 
   async function handleRegistrar(tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') {
     if (!user) return;
+
+    // Feedback tátil ao bater ponto
+    haptic.medium();
 
     const hora = agora();
     const base: Registro = registroHoje || {
@@ -281,12 +340,9 @@ export default function App() {
     );
   }
 
+  // Tela de loading aprimorada com skeleton
   if (carregando && !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] dark:bg-black">
-        <div className="w-10 h-10 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin" />
-      </div>
-    );
+    return <SkeletonScreen />;
   }
 
   if (!user) {
@@ -297,8 +353,22 @@ export default function App() {
     );
   }
 
+  // Skeleton enquanto carrega dados do usuário logado
+  if (carregando && user) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
+        <SkeletonScreen />
+        <TabBar active={activeTab} onChange={handleTabChange} />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-white transition-colors">
+    <div
+      className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-white transition-colors touch-pan-y"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <div className="max-w-md mx-auto px-4 py-6">
         <TabSlide activeTab={activeTab} direction={tabDirection}>
           {activeTab === 'ponto' && (
@@ -313,6 +383,7 @@ export default function App() {
               onAbrirLancamentoManual={() => setLancamentoAberto(true)}
               pendingCount={pendingCount}
               isOnline={isOnline}
+              onHaptic={haptic.light}
             />
           )}
 
@@ -330,6 +401,8 @@ export default function App() {
               profile={profile}
               userEmail={userEmail}
               onProfileUpdate={carregarDados}
+              notificacaoAtivada={notifAtivado}
+              onToggleNotificacao={toggleNotif}
             />
           )}
         </TabSlide>
