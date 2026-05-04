@@ -13,7 +13,7 @@
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="X-Frame-Options" content="DENY" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self';" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self';" />
     <meta name="description" content="Controle de jornada de trabalho com registro de ponto, banco de horas e sincronizacao em nuvem." />
 
     <!-- Open Graph / Social -->
@@ -54,7 +54,27 @@
     <title>Meu Ponto</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback exibido se o JS não carregar em 5s (mobile/PWA cache quebrado) -->
+      <div id="loading-fallback" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;font-family:system-ui,sans-serif;text-align:center;background:#F2F2F7;color:#333;">
+        <div style="width:40px;height:40px;border:4px solid #e5e7eb;border-top-color:#06b6d4;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px;"></div>
+        <p style="margin:0;font-size:14px;color:#666;">Carregando PontoGO...</p>
+      </div>
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+      </style>
+    </div>
+    <script>
+      // Remove o fallback quando o app carregar; se não carregar em 5s, mostra botao de recarregar
+      setTimeout(function() {
+        if (!window.__app_loaded) {
+          var fb = document.getElementById('loading-fallback');
+          if (fb) {
+            fb.innerHTML = '<div style="font-size:48px;margin-bottom:16px;">📱</div><h2 style="margin:0 0 8px;font-size:18px;">App não carregou</h2><p style="margin:0 0 16px;color:#666;font-size:13px;">Tente limpar o cache ou recarregar.</p><button onclick="location.reload(true)" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#3b82f6);color:white;font-size:14px;cursor:pointer;">Recarregar</button>';
+          }
+        }
+      }, 5000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
-</html></html>
+</html>

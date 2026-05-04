@@ -35,8 +35,9 @@ export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 60 }: SwipeOpt
     }
   }, []);
 
-  const onTouchEnd = useCallback(() => {
-    const diffX = startX.current;
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touch = e.changedTouches[0];
+    const diffX = touch.clientX - startX.current;
     if (Math.abs(diffX) < threshold) return;
 
     if (diffX < 0 && onSwipeLeft) {

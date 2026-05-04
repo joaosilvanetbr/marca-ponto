@@ -30,11 +30,11 @@ function deriveKey(userId: string): number[] {
 
 function xorEncryptDecrypt(input: string, userId: string): string {
   const key = deriveKey(userId);
-  const output: number[] = [];
+  let output = '';
   for (let i = 0; i < input.length; i++) {
-    output.push(input.charCodeAt(i) ^ key[i % key.length]);
+    output += String.fromCharCode(input.charCodeAt(i) ^ key[i % key.length]);
   }
-  return String.fromCharCode(...output);
+  return output;
 }
 
 function encryptQueue(queue: QueueItem[], userId: string): string {

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'sonner';
 import type { Registro, Profile, Tab } from '@/types';
 import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistro, getProfile } from '@/lib/supabase';
-import { addToQueue, syncQueue } from '@/lib/offline-queue';
+import { addToQueue, syncQueue, getPendingCount } from '@/lib/offline-queue';
 import { hoje, mesAtual, agora } from '@/lib/time-utils';
 import { logError } from '@/lib/error-utils';
 import { useLembretes } from '@/hooks/useLembretes';
@@ -129,9 +129,7 @@ export default function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       if (user) {
-        import('@/lib/offline-queue').then(({ getPendingCount }) => {
-          setPendingCount(getPendingCount(user));
-        });
+        setPendingCount(getPendingCount(user));
       }
     }, 1000);
     return () => clearInterval(interval);
