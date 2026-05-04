@@ -66,11 +66,6 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
     return dados.items;
   }, [dados.items, filtro]);
 
-  // Dados pro mini gráfico
-  const maxTrab = useMemo(() => {
-    return Math.max(...dados.items.map(i => i.trab), jornadaMin);
-  }, [dados.items, jornadaMin]);
-
   function mudarMes(delta: number) {
     const [y, m] = mesSelecionado.split('-').map(Number);
     const novo = new Date(y, m - 1 + delta, 1);
@@ -147,34 +142,7 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
           </div>
         </div>
 
-        {/* Mini gráfico de barras */}
-        <div className="mt-4">
-          <div className="flex items-end gap-[2px] h-16">
-            {dados.items.slice(0, 31).map((item, i) => {
-              const pct = maxTrab > 0 ? (item.trab / maxTrab) * 100 : 0;
-              const isHoje = item.isHoje;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ height: 0 }}
-                  animate={{ height: `${Math.max(pct, 4)}%` }}
-                  transition={{ duration: 0.4, delay: i * 0.02 }}
-                  className={`flex-1 rounded-t-sm min-w-[2px] ${
-                    isHoje ? 'bg-cyan-500' :
-                    item.reg ? 'bg-cyan-400 dark:bg-cyan-600' :
-                    item.isFuturo ? 'bg-slate-100 dark:bg-slate-800' :
-                    'bg-slate-200 dark:bg-slate-700'
-                  }`}
-                  title={`${item.data.split('-')[2]}: ${paraHora(item.trab)}`}
-                />
-              );
-            })}
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">01</span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">{dados.items.length}</span>
-          </div>
-        </div>
+
       </motion.div>
 
       {/* Filtro + Export */}
@@ -237,18 +205,46 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                 </div>
                 <div className="flex-1 min-w-0">
                   {temRegistro ? (
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
-                      {item.reg!.entrada && <span className="text-slate-600 dark:text-slate-300">E: {fmtHora(item.reg!.entrada)}</span>}
-                      {item.reg!.intervalo && <span className="text-slate-600 dark:text-slate-300">I: {fmtHora(item.reg!.intervalo)}</span>}
-                      {item.reg!.retorno && <span className="text-slate-600 dark:text-slate-300">R: {fmtHora(item.reg!.retorno)}</span>}
-                      {item.reg!.saida && <span className="text-slate-600 dark:text-slate-300">S: {fmtHora(item.reg!.saida)}</span>}
+                    <div className="grid grid-cols-2 gap-1.5 text-xs">
+                      {item.reg!.entrada && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-md bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">E</span>
+                          </div>
+                          <span className="text-slate-700 dark:text-slate-200 font-medium tabular-nums">{fmtHora(item.reg!.entrada)}</span>
+                        </div>
+                      )}
+                      {item.reg!.intervalo && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-md bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">I</span>
+                          </div>
+                          <span className="text-slate-700 dark:text-slate-200 font-medium tabular-nums">{fmtHora(item.reg!.intervalo)}</span>
+                        </div>
+                      )}
+                      {item.reg!.retorno && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                            <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400">R</span>
+                          </div>
+                          <span className="text-slate-700 dark:text-slate-200 font-medium tabular-nums">{fmtHora(item.reg!.retorno)}</span>
+                        </div>
+                      )}
+                      {item.reg!.saida && (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-md bg-rose-100 dark:bg-rose-900 flex items-center justify-center">
+                            <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400">S</span>
+                          </div>
+                          <span className="text-slate-700 dark:text-slate-200 font-medium tabular-nums">{fmtHora(item.reg!.saida)}</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">Dia sem registro</span>
                   )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{paraHora(item.trab)}</span>
-                    <span className={`text-xs font-semibold tabular-nums ${item.saldo >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">{paraHora(item.trab)}</span>
+                    <span className={`text-[10px] font-semibold tabular-nums ${item.saldo >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                       {item.saldo >= 0 ? '+' : ''}{paraHora(item.saldo)}
                     </span>
                   </div>
