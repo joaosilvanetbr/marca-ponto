@@ -4,7 +4,16 @@ import type { Registro, Profile, DiaCalendario } from '@/types';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-export const supabase = createClient(url, key);
+if (!url || !key) {
+  console.error(
+    '[PontoGO] Variáveis de ambiente faltando:\n' +
+    '  VITE_SUPABASE_URL=' + (url || 'undefined') + '\n' +
+    '  VITE_SUPABASE_PUBLISHABLE_KEY=' + (key ? '***definida***' : 'undefined') + '\n\n' +
+    'Configure essas variáveis no painel do Cloudflare Pages (Settings > Environment variables) ou crie um arquivo .env na raiz do projeto.'
+  );
+}
+
+export const supabase = createClient(url || '', key || '');
 
 export async function getRegistros(userId: string, mes: string): Promise<Registro[]> {
   const { data, error } = await supabase
