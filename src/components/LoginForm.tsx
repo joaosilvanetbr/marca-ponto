@@ -52,15 +52,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
     setSucesso('');
   }
 
-  const titulo = modo === 'login' ? 'Bem-vindo' : modo === 'cadastro' ? 'Criar conta' : 'Recuperar senha';
+  const titulo = modo === 'login' ? 'Bem-Vindo ao PontoGO' : modo === 'cadastro' ? 'Criar conta' : 'Recuperar senha';
   const subtitulo = modo === 'login' ? 'Entre para registrar seu ponto' : modo === 'cadastro' ? 'Cadastre-se para começar' : 'Informe seu email para redefinir a senha';
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="min-h-screen flex items-center justify-center p-4">
       <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="w-full max-w-sm ios-card rounded-2xl p-8 shadow-2xl">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
-            {modo === 'recuperar' ? <KeyRound className="w-8 h-8 text-white" /> : <LogIn className="w-8 h-8 text-white" />}
-          </div>
+          <img src="./icon-192.png" alt="PontoGO" className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg" />
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{titulo}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitulo}</p>
         </div>
