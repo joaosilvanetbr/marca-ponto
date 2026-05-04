@@ -3,7 +3,7 @@ import type { Profile } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Timer, Wallet, Bell, CheckCircle2, User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, CheckCircle2, User, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 interface SettingsProps {
   profile: Profile | null;
@@ -13,8 +13,6 @@ interface SettingsProps {
 
 export default function Settings({ profile, userEmail, onProfileUpdate }: SettingsProps) {
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
-  const [tolerancia, setTolerancia] = useState(profile?.tolerancia || 10);
-  const [saldoInicial, setSaldoInicial] = useState(profile?.saldo_inicial || 0);
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
 
   // Conta
@@ -42,8 +40,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
   useEffect(() => {
     if (profile) {
       setJornada(profile.jornada);
-      setTolerancia(profile.tolerancia);
-      setSaldoInicial(profile.saldo_inicial);
       setDarkMode(profile.dark_mode);
     }
   }, [profile?.id]);
@@ -82,16 +78,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
   function handleJornadaChange(value: string) {
     setJornada(value);
     scheduleSave('jornada', value);
-  }
-
-  function handleToleranciaChange(value: number) {
-    setTolerancia(value);
-    scheduleSave('tolerancia', value);
-  }
-
-  function handleSaldoChange(value: number) {
-    setSaldoInicial(value);
-    scheduleSave('saldo_inicial', value);
   }
 
   // Auto-salva o tema imediatamente
@@ -162,10 +148,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
     await supabase.auth.signOut();
     window.location.reload();
   }
-
-  const saldoHoras = Math.floor(Math.abs(saldoInicial) / 60);
-  const saldoMin = Math.abs(saldoInicial) % 60;
-  const saldoSinal = saldoInicial < 0 ? '-' : '';
 
   const nomeExibido = nome || userEmail.split('@')[0];
 
@@ -342,49 +324,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
             onChange={(e) => handleJornadaChange(e.target.value)}
             className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
           />
-        </div>
-
-        {/* Tolerância */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-              <Timer className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Tolerancia (min)</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Margem antes de contar saldo</div>
-            </div>
-          </div>
-          <input
-            type="number"
-            min={0}
-            max={60}
-            value={tolerancia}
-            onChange={(e) => handleToleranciaChange(Number(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
-          />
-        </div>
-
-        {/* Saldo inicial */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Saldo inicial (min)</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Banco de horas previo</div>
-            </div>
-          </div>
-          <input
-            type="number"
-            value={saldoInicial}
-            onChange={(e) => handleSaldoChange(Number(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
-          />
-          <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-            Atual: {saldoSinal}{saldoHoras}h {saldoMin}min
-          </div>
         </div>
 
         {/* Status feedback */}
