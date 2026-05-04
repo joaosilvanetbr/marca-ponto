@@ -1,8 +1,8 @@
 {
-  "id": "meu-ponto-pwa",
-  "name": "Meu Ponto",
-  "short_name": "Meu Ponto",
-  "description": "Controle de jornada de trabalho com registro de ponto, banco de horas e sincronizacao em nuvem.",
+  "id": "pontogo-pwa",
+  "name": "PontoGO",
+  "short_name": "PontoGO",
+  "description": "PontoGO - Controle de jornada de trabalho com registro de ponto, banco de horas e sincronizacao em nuvem.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

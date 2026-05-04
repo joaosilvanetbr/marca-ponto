@@ -25,7 +25,7 @@ export function useLembretes(
 
         // Notificação do sistema (se ativada)
         if (notificar) {
-          notificar('Meu Ponto — Lembrete', {
+          notificar('PontoGO — Lembrete', {
             body: lembrete,
             icon: '/pwa-192x192.png',
             badge: '/pwa-192x192.png',

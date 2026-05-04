@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 /**
  * Supabase Agent Skill
- * Ferramentas para agentes de IA manipularem dados do Meu Ponto via API REST
+ * Ferramentas para agentes de IA manipularem dados do PontoGO via API REST
  * Usa a anon key já configurada — não precisa da senha do Postgres
  */
 
