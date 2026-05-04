@@ -34,7 +34,7 @@ export function sanitizeErrorMessage(err: unknown): string {
 export function logError(context: string, err: unknown): void {
   // Em producao, isso poderia enviar para um servico de logging (Sentry, etc.)
   // Por enquanto, loga no console com contexto
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.env.DEV) {
     console.error(`[${context}]`, err);
   }
 }

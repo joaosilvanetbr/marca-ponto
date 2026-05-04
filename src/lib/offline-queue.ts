@@ -153,6 +153,6 @@ export async function syncQueue(userId: string): Promise<{ success: number; fail
   return { success, failed };
 }
 
-export function clearQueue(userId: string = ''): void {
+export function clearQueue(_userId?: string): void {
   localStorage.removeItem(QUEUE_KEY);
 }

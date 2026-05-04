@@ -196,14 +196,15 @@ export default function App() {
   }, [isOnline]);
 
   async function handleRegistrar(tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') {
-    if (!user) return;
+    const currentUser = user;
+    if (!currentUser) return;
 
     // Feedback tátil ao bater ponto
     haptic.medium();
 
     const hora = agora();
     const base: Registro = registroHoje || {
-      user_id: user,
+      user_id: currentUser,
       data: hoje(),
       entrada: null,
       intervalo: null,
@@ -215,12 +216,12 @@ export default function App() {
 
     if (isOnline) {
       try {
-        await upsertRegistro(user, novo);
+        await upsertRegistro(currentUser, novo);
       } catch {
-        addToQueue('upsert', novo, 'registros', user);
+        addToQueue('upsert', novo, 'registros', currentUser);
       }
     } else {
-      addToQueue('upsert', novo, 'registros', user);
+      addToQueue('upsert', novo, 'registros', currentUser);
     }
 
     setRegistroHoje(novo);
@@ -236,10 +237,11 @@ export default function App() {
   }
 
   async function handleSync() {
-    if (syncing) return;
+    const currentUser = user;
+    if (syncing || !currentUser) return;
     setSyncing(true);
     try {
-      const result = await syncQueue(user);
+      const result = await syncQueue(currentUser);
       if (result.success > 0) {
         await carregarDados();
       }
@@ -251,8 +253,10 @@ export default function App() {
   }
 
   async function handleDelete(id: number) {
+    const currentUser = user;
+    if (!currentUser) return;
     if (!isOnline) {
-      addToQueue('delete', id, 'registros', user);
+      addToQueue('delete', id, 'registros', currentUser);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== id));
       if (registroHoje?.id === id) {
         setRegistroHoje(null);
@@ -260,29 +264,31 @@ export default function App() {
       return;
     }
     try {
-      await deleteRegistro(user, id);
+      await deleteRegistro(currentUser, id);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== id));
       if (registroHoje?.id === id) {
         setRegistroHoje(null);
       }
     } catch {
-      addToQueue('delete', id, 'registros', user);
+      addToQueue('delete', id, 'registros', currentUser);
     }
   }
 
   async function handleUpdate(id: number, updates: Partial<Registro>) {
+    const currentUser = user;
+    if (!currentUser) return;
     if (!isOnline) {
-      addToQueue('update', { id, ...updates }, 'registros', user);
+      addToQueue('update', { id, ...updates }, 'registros', currentUser);
       const updated = { ...registroHoje, ...updates, id } as Registro;
       setRegistroHoje(updated);
       setRegistrosMes((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
       return;
     }
     try {
-      await upsertRegistro(user, { ...registroHoje, ...updates, id } as Registro);
+      await upsertRegistro(currentUser, { ...registroHoje, ...updates, id } as Registro);
       await carregarDados();
     } catch {
-      addToQueue('update', { id, ...updates }, 'registros', user);
+      addToQueue('update', { id, ...updates }, 'registros', currentUser);
     }
   }
 
@@ -293,30 +299,32 @@ export default function App() {
   }
 
   async function handleLimparDia() {
-    if (!registroHoje?.id) return;
+    const currentUser = user;
+    if (!registroHoje?.id || !currentUser) return;
     if (!isOnline) {
-      addToQueue('delete', registroHoje.id, 'registros', user);
+      addToQueue('delete', registroHoje.id, 'registros', currentUser);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== registroHoje!.id));
       setRegistroHoje(null);
       return;
     }
     try {
-      await deleteRegistro(user, registroHoje.id);
+      await deleteRegistro(currentUser, registroHoje.id);
       setRegistrosMes((prev) => prev.filter((r) => r.id !== registroHoje!.id));
       setRegistroHoje(null);
     } catch {
-      addToQueue('delete', registroHoje.id, 'registros', user);
+      addToQueue('delete', registroHoje.id, 'registros', currentUser);
     }
   }
   async function handleLancamentoManual(registro: Registro) {
-    if (!user) return;
-    const fullRegistro = { ...registro, user_id: user };
+    const currentUser = user;
+    if (!currentUser) return;
+    const fullRegistro = { ...registro, user_id: currentUser };
     try {
       if (isOnline) {
-        await upsertRegistro(user, fullRegistro);
+        await upsertRegistro(currentUser, fullRegistro);
         await carregarDados();
       } else {
-        addToQueue('upsert', fullRegistro, 'registros', user);
+        addToQueue('upsert', fullRegistro, 'registros', currentUser);
         setRegistrosMes((prev) => {
           const idx = prev.findIndex((r) => r.data === fullRegistro.data);
           if (idx >= 0) {
