@@ -101,7 +101,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
   }
 
   function iniciarEdicao(tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida', hora: string) {
-    setHoraEditada(hora);
+    setHoraEditada(fmtHora(hora));
     setEditando(tipo);
   }
 
@@ -272,7 +272,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
                     <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.label}</div>
                     {isEditing && isDone ? (
                       <div className="flex items-center gap-2 mt-1">
-                        <input type="time" value={horaEditada} onChange={(e) => setHoraEditada(e.target.value)} className="px-2 py-1 rounded-lg bg-white dark:bg-slate-700 border border-cyan-300 dark:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm text-slate-800 dark:text-white" step="1" />
+                        <input type="time" value={horaEditada} onChange={(e) => setHoraEditada(e.target.value)} className="px-2 py-1 rounded-lg bg-white dark:bg-slate-700 border border-cyan-300 dark:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm text-slate-800 dark:text-white" />
                         <motion.button whileTap={{ scale: 0.9 }} onClick={() => salvarEdicao(item.key)} disabled={salvandoEdicao} className="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50">
                           {salvandoEdicao ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         </motion.button>
