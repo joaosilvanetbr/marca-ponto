@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Registro, Profile } from '@/types';
-import { agora, paraHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao } from '@/lib/time-utils';
+import { agora, paraHora, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao } from '@/lib/time-utils';
 import { Clock, LogIn, Coffee, Play, LogOut, Loader2, WifiOff, Save, X, Pencil, Trash2, AlertTriangle, FilePlus } from 'lucide-react';
 
 interface ClockCardProps {
@@ -282,7 +282,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
                       </div>
                     ) : (
                       <button onClick={() => isDone && iniciarEdicao(item.key, item.time!)} className={`text-xs flex items-center gap-1 mt-0.5 ${isDone ? 'text-slate-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 cursor-pointer' : 'text-slate-400 dark:text-slate-500 cursor-default'}`} disabled={!isDone}>
-                        {item.time ? <>{item.time} <Pencil className="w-3 h-3 opacity-60" /></> : isNext ? 'Aguardando...' : '—'}
+                        {item.time ? <>{fmtHora(item.time)}</> : isNext ? 'Aguardando...' : '—'}
                       </button>
                     )}
                   </div>

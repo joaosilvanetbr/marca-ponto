@@ -18,6 +18,14 @@ export function paraHora(minutos: number): string {
 }
 
 /**
+ * Remove segundos de uma string de hora "HH:MM:SS" → "HH:MM"
+ */
+export function fmtHora(hora: string | null | undefined): string {
+  if (!hora) return '';
+  return hora.slice(0, 5);
+}
+
+/**
  * Converte minutos para "HH:MM" com sinal e formato legível
  */
 export function formatarSaldo(minutos: number): string {

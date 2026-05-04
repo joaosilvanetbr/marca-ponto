@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Registro, Profile } from '@/types';
-import { mesAtual, diasDoMes, nomeDiaSemana, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
+import { mesAtual, diasDoMes, nomeDiaSemana, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays } from 'lucide-react';
 
@@ -131,10 +131,10 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                 <div className="flex-1 min-w-0">
                   {temRegistro ? (
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
-                      {item.reg!.entrada && <span className="text-slate-600 dark:text-slate-300">E: {item.reg!.entrada}</span>}
-                      {item.reg!.intervalo && <span className="text-slate-600 dark:text-slate-300">I: {item.reg!.intervalo}</span>}
-                      {item.reg!.retorno && <span className="text-slate-600 dark:text-slate-300">R: {item.reg!.retorno}</span>}
-                      {item.reg!.saida && <span className="text-slate-600 dark:text-slate-300">S: {item.reg!.saida}</span>}
+                      {item.reg!.entrada && <span className="text-slate-600 dark:text-slate-300">E: {fmtHora(item.reg!.entrada)}</span>}
+                      {item.reg!.intervalo && <span className="text-slate-600 dark:text-slate-300">I: {fmtHora(item.reg!.intervalo)}</span>}
+                      {item.reg!.retorno && <span className="text-slate-600 dark:text-slate-300">R: {fmtHora(item.reg!.retorno)}</span>}
+                      {item.reg!.saida && <span className="text-slate-600 dark:text-slate-300">S: {fmtHora(item.reg!.saida)}</span>}
                     </div>
                   ) : (
                     <span className="text-sm text-slate-400 dark:text-slate-500 italic">Sem registro</span>
