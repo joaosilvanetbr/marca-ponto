@@ -2,7 +2,9 @@ import { useState, useMemo } from 'react';
 import type { Registro, Profile } from '@/types';
 import { mesAtual, diasDoMes, nomeDiaSemana, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays, Download, Filter } from 'lucide-react';
+
+type Filtro = 'todos' | 'com_registro' | 'sem_registro';
 
 interface BankHistoryProps {
   registros: Registro[];
@@ -14,6 +16,7 @@ interface BankHistoryProps {
 export default function BankHistory({ registros, profile, onEdit, onDelete }: BankHistoryProps) {
   const [mesSelecionado, setMesSelecionado] = useState(mesAtual());
   const [deletando, setDeletando] = useState<number | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>('todos');
 
   const jornadaMin = profile ? jornadaParaMinutos(profile.jornada) : 480;
   const tolerancia = profile?.tolerancia || 10;
@@ -29,29 +32,44 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
   const dados = useMemo(() => {
     let totalTrabalhado = 0;
     let saldoMes = 0;
+    let diasComRegistro = 0;
+    let diasSemRegistro = 0;
     const items = [];
 
     for (const dia of dias) {
       const reg = registrosMap.get(dia);
+      const isHoje = dia === new Date().toISOString().split('T')[0];
+      const diaSemana = new Date(dia + 'T12:00:00').getDay();
+      const isFuturo = dia > new Date().toISOString().split('T')[0];
+      const isFimDeSemana = diaSemana === 0 || diaSemana === 6;
+
       if (reg) {
         const trab = calcularMinutosTrabalhados(reg.entrada, reg.intervalo, reg.retorno, reg.saida);
         const saldo = calcularSaldoDia(trab, jornadaMin, tolerancia);
         totalTrabalhado += trab;
         saldoMes += saldo;
-        items.push({ data: dia, reg, trab, saldo });
-      } else {
-        const hojeStr = new Date().toISOString().split('T')[0];
-        if (dia <= hojeStr) {
-          const semana = new Date(dia + 'T12:00:00').getDay();
-          if (semana !== 0 && semana !== 6) {
-            saldoMes -= jornadaMin;
-            items.push({ data: dia, reg: null, trab: 0, saldo: -jornadaMin });
-          }
-        }
+        diasComRegistro++;
+        items.push({ data: dia, reg, trab, saldo, isHoje, isFuturo, isFimDeSemana, status: 'completo' as const });
+      } else if (!isFuturo && !isFimDeSemana) {
+        saldoMes -= jornadaMin;
+        diasSemRegistro++;
+        items.push({ data: dia, reg: null, trab: 0, saldo: -jornadaMin, isHoje, isFuturo, isFimDeSemana, status: 'faltante' as const });
       }
     }
-    return { items, totalTrabalhado, saldoMes };
+
+    return { items, totalTrabalhado, saldoMes, diasComRegistro, diasSemRegistro };
   }, [dias, registrosMap, jornadaMin, tolerancia]);
+
+  const itemsFiltrados = useMemo(() => {
+    if (filtro === 'com_registro') return dados.items.filter(i => i.reg !== null);
+    if (filtro === 'sem_registro') return dados.items.filter(i => i.reg === null);
+    return dados.items;
+  }, [dados.items, filtro]);
+
+  // Dados pro mini gráfico
+  const maxTrab = useMemo(() => {
+    return Math.max(...dados.items.map(i => i.trab), jornadaMin);
+  }, [dados.items, jornadaMin]);
 
   function mudarMes(delta: number) {
     const [y, m] = mesSelecionado.split('-').map(Number);
@@ -62,6 +80,28 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
   async function handleDelete(id: number) {
     setDeletando(id);
     try { await onDelete(id); } finally { setDeletando(null); }
+  }
+
+  function exportarCSV() {
+    const linhas = ['Data,Dia,Entrada,Intervalo,Retorno,Saida,Horas,Saldo'];
+    for (const item of dados.items) {
+      const dia = item.data;
+      const reg = item.reg;
+      const entrada = reg?.entrada ? fmtHora(reg.entrada) : '';
+      const intervalo = reg?.intervalo ? fmtHora(reg.intervalo) : '';
+      const retorno = reg?.retorno ? fmtHora(reg.retorno) : '';
+      const saida = reg?.saida ? fmtHora(reg.saida) : '';
+      const horas = paraHora(item.trab);
+      const saldo = paraHora(item.saldo);
+      linhas.push(`${dia},${nomeDiaSemana(dia)},${entrada},${intervalo},${retorno},${saida},${horas},${saldo}`);
+    }
+    const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ponto-${mesSelecionado}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   return (
@@ -84,26 +124,90 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
 
       {/* Resumo do mês */}
       <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="ios-card rounded-2xl p-5 shadow-xl">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Total Trabalhado</div>
-            <div className="text-2xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">{paraHora(dados.totalTrabalhado)}</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Horas Trabalhadas</div>
+            <div className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">{paraHora(dados.totalTrabalhado)}</div>
           </div>
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Saldo do Mês</div>
-            <div className={`text-2xl font-bold mt-1 tabular-nums ${dados.saldoMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Saldo</div>
+            <div className={`text-xl font-bold mt-1 tabular-nums ${dados.saldoMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {dados.saldoMes >= 0 ? '+' : ''}{paraHora(dados.saldoMes)}
             </div>
           </div>
-        </div>
-        {profile && (
-          <div className="mt-3 text-center">
-            <span className="text-xs text-slate-400 dark:text-slate-500">
-              Saldo inicial: {paraHora(profile.saldo_inicial)} | Acumulado: {dados.saldoMes >= 0 ? '+' : ''}{paraHora(dados.saldoMes + profile.saldo_inicial)}
-            </span>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Dias Trabalhados</div>
+            <div className="text-xl font-bold text-slate-800 dark:text-white mt-1">{dados.diasComRegistro}</div>
           </div>
-        )}
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Média / dia</div>
+            <div className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">
+              {dados.diasComRegistro > 0 ? paraHora(Math.round(dados.totalTrabalhado / dados.diasComRegistro)) : '—'}
+            </div>
+          </div>
+        </div>
+
+        {/* Mini gráfico de barras */}
+        <div className="mt-4">
+          <div className="flex items-end gap-[2px] h-16">
+            {dados.items.slice(0, 31).map((item, i) => {
+              const pct = maxTrab > 0 ? (item.trab / maxTrab) * 100 : 0;
+              const isHoje = item.isHoje;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${Math.max(pct, 4)}%` }}
+                  transition={{ duration: 0.4, delay: i * 0.02 }}
+                  className={`flex-1 rounded-t-sm min-w-[2px] ${
+                    isHoje ? 'bg-cyan-500' :
+                    item.reg ? 'bg-cyan-400 dark:bg-cyan-600' :
+                    item.isFuturo ? 'bg-slate-100 dark:bg-slate-800' :
+                    'bg-slate-200 dark:bg-slate-700'
+                  }`}
+                  title={`${item.data.split('-')[2]}: ${paraHora(item.trab)}`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">01</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{dados.items.length}</span>
+          </div>
+        </div>
       </motion.div>
+
+      {/* Filtro + Export */}
+      <div className="ios-card rounded-2xl p-3 shadow-xl flex items-center gap-2">
+        <Filter className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 ml-2" />
+        <div className="flex gap-1 flex-1">
+          {([
+            { key: 'todos' as Filtro, label: 'Todos' },
+            { key: 'com_registro' as Filtro, label: 'Com registro' },
+            { key: 'sem_registro' as Filtro, label: 'Faltantes' },
+          ]).map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFiltro(f.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                filtro === f.key
+                  ? 'bg-cyan-500 text-white'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={exportarCSV}
+          className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shrink-0"
+          title="Exportar CSV"
+        >
+          <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+        </motion.button>
+      </div>
 
       {/* Lista de dias */}
       <div className="ios-card rounded-2xl p-4 shadow-xl">
@@ -111,9 +215,10 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
           <Clock className="w-4 h-4" /> Registros do mês
         </h3>
         <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-          {dados.items.map((item) => {
-            const isHoje = item.data === new Date().toISOString().split('T')[0];
+          {itemsFiltrados.map((item) => {
             const temRegistro = !!item.reg;
+            const isHoje = item.isHoje;
+
             return (
               <motion.div
                 key={item.data}
@@ -121,12 +226,14 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
                 className={`flex items-center gap-3 p-3 rounded-2xl transition-all ${
-                  isHoje ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200/50 dark:border-cyan-800/50' : 'bg-slate-50 dark:bg-slate-800'
+                  isHoje ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200 dark:border-cyan-800' :
+                  temRegistro ? 'bg-slate-50 dark:bg-slate-800' :
+                  'bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900'
                 }`}
               >
                 <div className="text-center min-w-[3rem]">
-                  <div className="text-xs text-slate-400 dark:text-slate-500">{nomeDiaSemana(item.data)}</div>
-                  <div className="text-lg font-bold text-slate-700 dark:text-slate-200">{item.data.split('-')[2]}</div>
+                  <div className={`text-xs ${temRegistro ? 'text-slate-400 dark:text-slate-500' : 'text-amber-500 dark:text-amber-600'}`}>{nomeDiaSemana(item.data)}</div>
+                  <div className={`text-lg font-bold ${temRegistro ? 'text-slate-700 dark:text-slate-200' : 'text-amber-700 dark:text-amber-400'}`}>{item.data.split('-')[2]}</div>
                 </div>
                 <div className="flex-1 min-w-0">
                   {temRegistro ? (
@@ -137,7 +244,7 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                       {item.reg!.saida && <span className="text-slate-600 dark:text-slate-300">S: {fmtHora(item.reg!.saida)}</span>}
                     </div>
                   ) : (
-                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">Sem registro</span>
+                    <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">Dia sem registro</span>
                   )}
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{paraHora(item.trab)}</span>
@@ -159,8 +266,8 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
               </motion.div>
             );
           })}
-          {dados.items.length === 0 && (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500">Nenhum registro neste mês</div>
+          {itemsFiltrados.length === 0 && (
+            <div className="text-center py-8 text-slate-400 dark:text-slate-500">Nenhum registro encontrado com este filtro</div>
           )}
         </div>
       </div>
