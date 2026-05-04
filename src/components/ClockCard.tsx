@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Registro, Profile } from '@/types';
-import { agora, paraHora, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao } from '@/lib/time-utils';
-import { Clock, LogIn, Coffee, Play, LogOut, Loader2, WifiOff, Save, X, Pencil, Trash2 } from 'lucide-react';
+import { agora, paraHora, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao, hoje } from '@/lib/time-utils';
+import { isFeriadoNacional } from '@/lib/feriados';
+import { Clock, LogIn, Coffee, Play, LogOut, Loader2, WifiOff, Save, X, Pencil, Trash2, PartyPopper, Minus, Plus } from 'lucide-react';
 
 interface ClockCardProps {
   registro: Registro | null;
@@ -23,6 +24,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
   const [horaEditada, setHoraEditada] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [removendo, setRemovendo] = useState<string | null>(null);
+  const [ajustando, setAjustando] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setHoraAtual(agora()), 1000);
@@ -38,6 +40,9 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
   const saldo = profile ? calcularSaldoDia(minutosTrabalhados, jornadaParaMinutos(profile.jornada), profile.tolerancia) : 0;
   const jornadaStr = profile?.jornada || '08:00';
+
+  const feriadoHoje = isFeriadoNacional(hoje());
+  const isHojeFeriado = !!feriadoHoje;
 
   const timeline = [
     { key: 'entrada' as const, label: 'Entrada', icon: LogIn, time: registro?.entrada, color: 'from-emerald-400 to-emerald-500' },
@@ -127,6 +132,13 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
             </motion.div>
           )}
 
+          {isHojeFeriado && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex items-center justify-center gap-1.5 text-rose-500 text-sm font-medium">
+              <PartyPopper className="w-4 h-4" />
+              <span>Hoje é feriado nacional — {feriadoHoje!.nome}</span>
+            </motion.div>
+          )}
+
         </div>
       </motion.div>
 
@@ -176,8 +188,39 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
             )}
           </AnimatePresence>
 
+          {/* Ajuste fino do último ponto */}
+          {registro && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="text-xs text-slate-400 dark:text-slate-500 mr-1">Ajustar último:</span>
+              {([-5, -1, 1, 5] as const).map((min) => (
+                <motion.button
+                  key={min}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={async () => {
+                    const ultimoTipo = ['saida', 'retorno', 'intervalo', 'entrada'].find((t) => registro[t as keyof Registro]) as 'entrada' | 'intervalo' | 'retorno' | 'saida' | undefined;
+                    if (!ultimoTipo || !registro[ultimoTipo]) return;
+                    setAjustando(true);
+                    const [h, m] = registro[ultimoTipo]!.split(':').map(Number);
+                    const novoMin = h * 60 + m + min;
+                    const novoHora = `${String(Math.floor(novoMin / 60)).padStart(2, '0')}:${String(Math.max(0, novoMin % 60)).padStart(2, '0')}`;
+                    try {
+                      await onEditar(registro.id!, { [ultimoTipo]: novoHora });
+                    } finally {
+                      setAjustando(false);
+                    }
+                  }}
+                  disabled={ajustando}
+                  className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 flex items-center gap-0.5"
+                >
+                  {min < 0 ? <Minus className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                  {Math.abs(min)}min
+                </motion.button>
+              ))}
+            </div>
+          )}
+
           {/* Resumo */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-3">
             <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Trabalhado</div>
               <motion.div key={minutosTrabalhados} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">

@@ -4,6 +4,8 @@ import { getPendingCount } from '@/lib/offline-queue';
 import { useAuth } from '@/hooks/useAuth';
 import { AppContext } from './AppContext';
 
+const TAB_ORDER: Tab[] = ['ponto', 'historico', 'calendario', 'config'];
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('ponto');
@@ -15,11 +17,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [editando, setEditando] = useState<import('@/types').Registro | null>(null);
   const [lancamentoAberto, setLancamentoAberto] = useState(false);
 
-  const tabOrder: Tab[] = ['ponto', 'historico', 'config'];
-
   const handleTabChange = useCallback((tab: Tab) => {
-    const currentIdx = tabOrder.indexOf(prevTab);
-    const newIdx = tabOrder.indexOf(tab);
+    const currentIdx = TAB_ORDER.indexOf(prevTab);
+    const newIdx = TAB_ORDER.indexOf(tab);
     setTabDirection(newIdx > currentIdx ? 'right' : 'left');
     setPrevTab(tab);
     setActiveTab(tab);
@@ -42,12 +42,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (Math.abs(diffX) < 80 || Math.abs(diffY) > Math.abs(diffX)) return;
 
-    const currentIdx = tabOrder.indexOf(activeTab);
+    const currentIdx = TAB_ORDER.indexOf(activeTab);
 
-    if (diffX < 0 && currentIdx < tabOrder.length - 1) {
-      handleTabChange(tabOrder[currentIdx + 1]);
+    if (diffX < 0 && currentIdx < TAB_ORDER.length - 1) {
+      handleTabChange(TAB_ORDER[currentIdx + 1]);
     } else if (diffX > 0 && currentIdx > 0) {
-      handleTabChange(tabOrder[currentIdx - 1]);
+      handleTabChange(TAB_ORDER[currentIdx - 1]);
     }
   }, [touchStartX, touchStartY, activeTab, handleTabChange]);
 

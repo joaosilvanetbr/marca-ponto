@@ -6,6 +6,7 @@ export interface Registro {
   intervalo: string | null;
   retorno: string | null;
   saida: string | null;
+  observacao?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -40,4 +41,4 @@ export interface RegistroDia {
   saldoMinutos: number;
 }
 
-export type Tab = 'ponto' | 'historico' | 'config';
+export type Tab = 'ponto' | 'historico' | 'calendario' | 'config';

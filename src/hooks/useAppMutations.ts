@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import type { Registro } from '@/types';
-import { upsertRegistro, deleteRegistro } from '@/lib/supabase';
+import type { Registro, DiaCalendario } from '@/types';
+import { upsertRegistro, deleteRegistro, upsertCalendario, deleteCalendario } from '@/lib/supabase';
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { logError } from '@/lib/error-utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ export function useAppMutations() {
     queryClient.invalidateQueries({ queryKey: ['registro-do-dia'] });
     queryClient.invalidateQueries({ queryKey: ['registros-mes'] });
     queryClient.invalidateQueries({ queryKey: ['profile'] });
+    queryClient.invalidateQueries({ queryKey: ['calendario'] });
   }, [queryClient]);
 
   const handleRegistrar = useCallback(async (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => {
@@ -124,6 +125,37 @@ export function useAppMutations() {
     }
   }, [user, isOnline, setLancamentoAberto, invalidateData]);
 
+  const handleMarcarCalendario = useCallback(async (data: string, tipo: DiaCalendario['tipo'], descricao: string | null) => {
+    const currentUser = user;
+    if (!currentUser) return;
+    const item: DiaCalendario = { user_id: currentUser, data, tipo, descricao };
+    try {
+      if (isOnline) {
+        await upsertCalendario(item);
+      } else {
+        addToQueue('upsert', item, 'calendario', currentUser);
+      }
+      invalidateData();
+    } catch (err) {
+      logError('App.handleMarcarCalendario', err);
+    }
+  }, [user, isOnline, invalidateData]);
+
+  const handleRemoverCalendario = useCallback(async (data: string) => {
+    const currentUser = user;
+    if (!currentUser) return;
+    try {
+      if (isOnline) {
+        await deleteCalendario(currentUser, data);
+      } else {
+        addToQueue('delete', { userId: currentUser, data }, 'calendario', currentUser);
+      }
+      invalidateData();
+    } catch (err) {
+      logError('App.handleRemoverCalendario', err);
+    }
+  }, [user, isOnline, invalidateData]);
+
   return {
     handleRegistrar,
     handleSync,
@@ -131,5 +163,7 @@ export function useAppMutations() {
     handleUpdate,
     handleRemoverPonto,
     handleLancamentoManual,
+    handleMarcarCalendario,
+    handleRemoverCalendario,
   };
 }

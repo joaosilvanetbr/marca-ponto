@@ -89,6 +89,19 @@ export async function updateProfile(userId: string, updates: Partial<Profile>): 
   if (error) throw error;
 }
 
+export async function getRegistrosAno(userId: string, ano: number): Promise<Registro[]> {
+  const { data, error } = await supabase
+    .from('registros')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('data', `${ano}-01-01`)
+    .lte('data', `${ano}-12-31`)
+    .order('data', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
 // --- Calendário (feriados, folgas, etc) ---
 
 export async function getCalendario(userId: string, mes: string): Promise<DiaCalendario[]> {

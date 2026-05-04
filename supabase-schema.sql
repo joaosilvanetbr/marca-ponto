@@ -1,4 +1,3 @@
-sql
 -- ============================================
 -- PontoGO — Schema Supabase (idempotente)
 -- Pode rodar múltiplas vezes sem erro
@@ -29,6 +28,7 @@ CREATE TABLE IF NOT EXISTS public.registros (
     intervalo TIME,
     retorno TIME,
     saida TIME,
+    observacao TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, data)

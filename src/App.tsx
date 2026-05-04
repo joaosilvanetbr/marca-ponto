@@ -6,16 +6,21 @@ import { useApp } from '@/hooks/useApp';
 import { useRegistroDoDia } from '@/hooks/useRegistroDoDia';
 import { useRegistrosMes } from '@/hooks/useRegistrosMes';
 import { useProfile } from '@/hooks/useProfile';
+import { useCalendario } from '@/hooks/useCalendario';
 import { useAppMutations } from '@/hooks/useAppMutations';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLembretes } from '@/hooks/useLembretes';
+import { useLembreteConfig } from '@/hooks/useLembreteConfig';
+import { mesAtual } from '@/lib/time-utils';
 import LoginForm from '@/components/LoginForm';
 import ResetPassword from '@/components/ResetPassword';
 import ClockCard from '@/components/ClockCard';
 import BankHistory from '@/components/BankHistory';
+import CalendarView from '@/components/CalendarView';
+import ChartEvolucao from '@/components/ChartEvolucao';
 import Settings from '@/components/Settings';
 import EditModal from '@/components/EditModal';
 import LancamentoManual from '@/components/LancamentoManual';
@@ -34,10 +39,12 @@ function AppContent() {
   const { data: registroHoje, isLoading: loadingRegistro } = useRegistroDoDia(user);
   const { data: registrosMes = [], isLoading: loadingRegistros } = useRegistrosMes(user);
   const { data: profile, isLoading: loadingProfile } = useProfile(user);
+  const { data: calendarioMes = [], isLoading: loadingCalendario } = useCalendario(user, mesAtual());
 
   const {
     handleRegistrar, handleSync, handleDelete, handleUpdate,
     handleRemoverPonto, handleLancamentoManual,
+    handleMarcarCalendario, handleRemoverCalendario,
   } = useAppMutations();
 
   // Notificações do sistema
@@ -52,6 +59,8 @@ function AppContent() {
   // Theme color dinâmico
   useThemeColor(profile?.dark_mode || false);
 
+  const { config: lembreteConfig } = useLembreteConfig();
+
   // Lembretes/notificações
   useLembretes(
     registroHoje?.entrada || null,
@@ -59,6 +68,7 @@ function AppContent() {
     registroHoje?.retorno || null,
     registroHoje?.saida || null,
     profile?.jornada || '08:00',
+    lembreteConfig,
     notifAtivado ? notificar : undefined
   );
 
@@ -78,7 +88,7 @@ function AppContent() {
     }
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dadosCarregando = authLoading || loadingRegistro || loadingRegistros || loadingProfile;
+  const dadosCarregando = authLoading || loadingRegistro || loadingRegistros || loadingProfile || loadingCalendario;
 
   if (!user) {
     return (
@@ -120,11 +130,28 @@ function AppContent() {
           )}
 
           {activeTab === 'historico' && (
-            <BankHistory
-              registros={registrosMes}
-              profile={profile || null}
-              onEdit={setEditando}
-              onDelete={handleDelete}
+            <div className="space-y-4">
+              <ChartEvolucao
+                userId={user}
+                jornada={profile?.jornada || '08:00'}
+                tolerancia={profile?.tolerancia || 10}
+                saldoInicial={profile?.saldo_inicial || 0}
+              />
+              <BankHistory
+                registros={registrosMes}
+                profile={profile || null}
+                userId={user}
+                onEdit={setEditando}
+                onDelete={handleDelete}
+              />
+            </div>
+          )}
+
+          {activeTab === 'calendario' && (
+            <CalendarView
+              calendario={calendarioMes}
+              onMarcar={handleMarcarCalendario}
+              onRemover={handleRemoverCalendario}
             />
           )}
 

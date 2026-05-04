@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Profile } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { logError } from '@/lib/error-utils';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida } from 'lucide-react';
+import { useLembreteConfig } from '@/hooks/useLembreteConfig';
 
 interface SettingsProps {
   profile: Profile | null;
@@ -15,7 +16,10 @@ interface SettingsProps {
 }
 
 export default function Settings({ profile, userEmail, onProfileUpdate, notificacaoAtivada = false, onToggleNotificacao }: SettingsProps) {
+  const { config: lembreteConfig, save: saveLembrete } = useLembreteConfig();
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
+  const [tolerancia, setTolerancia] = useState(profile?.tolerancia || 10);
+  const [saldoInicial, setSaldoInicial] = useState(profile?.saldo_inicial || 0);
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
 
   // Conta
@@ -29,6 +33,11 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
   const [status, setStatus] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState('');
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileId = profile?.id;
+  const profileJornada = profile?.jornada;
+  const profileTolerancia = profile?.tolerancia;
+  const profileSaldoInicial = profile?.saldo_inicial;
+  const profileDarkMode = profile?.dark_mode;
 
   // Busca nome do user_metadata
   useEffect(() => {
@@ -41,11 +50,13 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
   // Sincroniza estados locais quando o profile muda
   useEffect(() => {
-    if (profile) {
-      setJornada(profile.jornada);
-      setDarkMode(profile.dark_mode);
+    if (profileId && profileJornada && profileTolerancia !== undefined && profileSaldoInicial !== undefined && profileDarkMode !== undefined) {
+      setJornada(profileJornada);
+      setTolerancia(profileTolerancia);
+      setSaldoInicial(profileSaldoInicial);
+      setDarkMode(profileDarkMode);
     }
-  }, [profile?.id]);
+  }, [profileId, profileJornada, profileTolerancia, profileSaldoInicial, profileDarkMode]);
 
   function showStatus(value: string, msg: string, duration = 3000) {
     setStatus(value);
@@ -83,14 +94,24 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     scheduleSave('jornada', value);
   }
 
+  function handleToleranciaChange(value: number) {
+    setTolerancia(value);
+    scheduleSave('tolerancia', value);
+  }
+
+  function handleSaldoInicialChange(value: number) {
+    setSaldoInicial(value);
+    scheduleSave('saldo_inicial', value);
+  }
+
   // Auto-salva o tema imediatamente
-  const toggleTema = useCallback(async () => {
+  async function toggleTema() {
     const novo = !darkMode;
     setDarkMode(novo);
     if (novo) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
     await autoSave({ dark_mode: novo });
-  }, [darkMode, profile, onProfileUpdate]);
+  }
 
   // Atualizar nome
   async function handleSalvarNome() {
@@ -348,6 +369,78 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
             onChange={(e) => handleJornadaChange(e.target.value)}
             className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
           />
+        </div>
+
+        {/* Tolerancia */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+              <span className="text-sm font-bold text-amber-600 dark:text-amber-400">±</span>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Tolerancia</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500">Minutos de margem sem contar saldo</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="range"
+              min={0}
+              max={60}
+              value={tolerancia}
+              onChange={(e) => handleToleranciaChange(parseInt(e.target.value, 10))}
+              className="flex-1 accent-cyan-500"
+            />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200 w-12 text-right">{tolerancia}min</span>
+          </div>
+        </div>
+
+        {/* Saldo Inicial */}
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">B</span>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Saldo inicial</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500">Banco de horas anterior (em minutos)</div>
+            </div>
+          </div>
+          <input
+            type="number"
+            value={saldoInicial}
+            onChange={(e) => handleSaldoInicialChange(parseInt(e.target.value || '0', 10))}
+            placeholder="Ex: 120 para +2h, -120 para -2h"
+            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
+          />
+        </div>
+
+        {/* Lembretes */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <Bell className="w-4 h-4" /> Lembretes
+          </h3>
+          {([
+            { key: 'entrada' as const, label: 'Entrada', icon: LogIn },
+            { key: 'intervalo' as const, label: 'Intervalo', icon: Coffee },
+            { key: 'retorno' as const, label: 'Retorno', icon: Play },
+            { key: 'saida' as const, label: 'Saída', icon: IconSaida },
+          ]).map(({ key, label, icon: Icon }) => (
+            <div key={key} className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${lembreteConfig[key] ? 'bg-cyan-100 dark:bg-cyan-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                  <Icon className={`w-4 h-4 ${lembreteConfig[key] ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                </div>
+                <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
+              </div>
+              <button
+                onClick={() => saveLembrete({ [key]: !lembreteConfig[key] })}
+                className={`relative w-10 h-6 rounded-full transition-colors ${lembreteConfig[key] ? 'bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+              >
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${lembreteConfig[key] ? 'translate-x-4' : 'translate-x-0'}`} />
+              </button>
+            </div>
+          ))}
         </div>
 
         {/* Status feedback */}

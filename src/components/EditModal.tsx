@@ -13,6 +13,7 @@ export default function EditModal({ registro, onSave, onClose }: EditModalProps)
   const [intervalo, setIntervalo] = useState(registro.intervalo || '');
   const [retorno, setRetorno] = useState(registro.retorno || '');
   const [saida, setSaida] = useState(registro.saida || '');
+  const [observacao, setObservacao] = useState(registro.observacao || '');
   const [carregando, setCarregando] = useState(false);
 
   async function handleSave() {
@@ -23,6 +24,7 @@ export default function EditModal({ registro, onSave, onClose }: EditModalProps)
         intervalo: intervalo || null,
         retorno: retorno || null,
         saida: saida || null,
+        observacao: observacao.trim() || null,
       });
       onClose();
     } finally {
@@ -57,6 +59,10 @@ export default function EditModal({ registro, onSave, onClose }: EditModalProps)
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Saída</label>
             <input type="time" value={saida} onChange={(e) => setSaida(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Observação</label>
+            <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Justificativa, projeto, nota..." rows={2} className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400 resize-none" />
           </div>
         </div>
 

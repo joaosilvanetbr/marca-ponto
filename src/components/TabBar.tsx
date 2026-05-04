@@ -1,6 +1,6 @@
 import type { Tab } from '@/types';
 import { motion } from 'framer-motion';
-import { Clock, History, Settings } from 'lucide-react';
+import { Clock, History, Settings, CalendarDays } from 'lucide-react';
 
 interface TabBarProps {
   active: Tab;
@@ -10,6 +10,7 @@ interface TabBarProps {
 const tabs: { id: Tab; label: string; icon: typeof Clock }[] = [
   { id: 'ponto', label: 'Ponto', icon: Clock },
   { id: 'historico', label: 'Histórico', icon: History },
+  { id: 'calendario', label: 'Calendário', icon: CalendarDays },
   { id: 'config', label: 'Config', icon: Settings },
 ];
 
