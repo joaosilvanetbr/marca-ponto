@@ -6,6 +6,7 @@ import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { hoje, mesAtual, agora } from '@/lib/time-utils';
 import { useLembretes } from '@/hooks/useLembretes';
 import LoginForm from '@/components/LoginForm';
+import ResetPassword from '@/components/ResetPassword';
 import ClockCard from '@/components/ClockCard';
 import BankHistory from '@/components/BankHistory';
 import Settings from '@/components/Settings';
@@ -29,6 +30,12 @@ export default function App() {
   const [lancamentoAberto, setLancamentoAberto] = useState(false);
   const [tabDirection, setTabDirection] = useState<'left' | 'right'>('right');
   const [prevTab, setPrevTab] = useState<Tab>('ponto');
+
+  // Detecta se o usuário chegou via link de recuperação de senha
+  const [isRecovery, setIsRecovery] = useState(() => {
+    const hash = window.location.hash;
+    return hash && (hash.includes('type=recovery') || hash.includes('access_token'));
+  });
 
   const tabOrder: Tab[] = ['ponto', 'historico', 'config'];
 
@@ -276,7 +283,11 @@ export default function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
-        <LoginForm onLogin={() => {}} />
+        {isRecovery ? (
+          <ResetPassword onVoltar={() => { setIsRecovery(false); window.location.hash = ''; }} />
+        ) : (
+          <LoginForm onLogin={() => {}} />
+        )}
       </div>
     );
   }
