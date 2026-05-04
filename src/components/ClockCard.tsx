@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Registro, Profile } from '@/types';
 import { agora, paraHora, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao } from '@/lib/time-utils';
-import { Clock, LogIn, Coffee, Play, LogOut, Loader2, WifiOff, Save, X, Pencil, Trash2, AlertTriangle, FilePlus } from 'lucide-react';
+import { Clock, LogIn, Coffee, Play, LogOut, Loader2, WifiOff, Save, X, Pencil, Trash2 } from 'lucide-react';
 
 interface ClockCardProps {
   registro: Registro | null;
@@ -17,15 +17,13 @@ interface ClockCardProps {
   isOnline: boolean;
 }
 
-export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia, onSync, onAbrirLancamentoManual, pendingCount, isOnline }: ClockCardProps) {
+export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia: _onLimparDia, onSync, onAbrirLancamentoManual: _onAbrirLancamentoManual, pendingCount, isOnline }: ClockCardProps) {
   const [horaAtual, setHoraAtual] = useState(agora());
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<'entrada' | 'intervalo' | 'retorno' | 'saida' | null>(null);
   const [horaEditada, setHoraEditada] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [removendo, setRemovendo] = useState<string | null>(null);
-  const [confirmarLimpar, setConfirmarLimpar] = useState(false);
-  const [limpando, setLimpando] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setHoraAtual(agora()), 1000);
@@ -86,20 +84,6 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
     }
   }
 
-  async function handleLimparDia() {
-    if (!confirmarLimpar) {
-      setConfirmarLimpar(true);
-      return;
-    }
-    setLimpando(true);
-    try {
-      await onLimparDia();
-      setConfirmarLimpar(false);
-    } finally {
-      setLimpando(false);
-    }
-  }
-
   function iniciarEdicao(tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida', hora: string) {
     setHoraEditada(fmtHora(hora));
     setEditando(tipo);
@@ -144,9 +128,6 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
             </motion.div>
           )}
 
-          <motion.button whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.01 }} onClick={onAbrirLancamentoManual} className="mt-4 w-full py-2.5 rounded-xl border border-cyan-200 dark:border-cyan-800/50 text-cyan-600 dark:text-cyan-400 text-sm font-medium hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors flex items-center justify-center gap-2">
-            <FilePlus className="w-4 h-4" /> Lançar dia anterior
-          </motion.button>
         </div>
       </motion.div>
 
@@ -216,32 +197,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
             <span className="text-xs text-slate-400 dark:text-slate-500">Jornada: {jornadaStr} | Tolerância: {profile?.tolerancia || 10}min</span>
           </div>
 
-          {/* Limpar dia */}
-          {registro && (registro.entrada || registro.intervalo || registro.retorno || registro.saida) && (
-            <div className="mt-4">
-              <AnimatePresence>
-                {confirmarLimpar ? (
-                  <motion.div key="confirm" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 p-3 text-center">
-                    <div className="flex items-center justify-center gap-2 text-rose-600 dark:text-rose-400 text-sm font-medium mb-2">
-                      <AlertTriangle className="w-4 h-4" /> Tem certeza? Isso apaga todos os pontos do dia.
-                    </div>
-                    <div className="flex gap-2">
-                      <motion.button whileTap={{ scale: 0.95 }} onClick={handleLimparDia} disabled={limpando} className="flex-1 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold shadow-md hover:bg-rose-600 transition-colors disabled:opacity-60">
-                        {limpando ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Sim, apagar tudo'}
-                      </motion.button>
-                      <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmarLimpar(false)} disabled={limpando} className="flex-1 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
-                        Cancelar
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.button whileTap={{ scale: 0.96 }} onClick={handleLimparDia} className="w-full py-2.5 rounded-xl border border-rose-200 dark:border-rose-800/50 text-rose-500 dark:text-rose-400 text-sm font-medium hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors flex items-center justify-center gap-2">
-                    <Trash2 className="w-4 h-4" /> Limpar registro do dia
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+
         </div>
       </motion.div>
 
