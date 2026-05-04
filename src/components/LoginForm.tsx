@@ -58,11 +58,12 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       return;
     }
 
+    attempts.current.push(now);
+
     try {
       if (modo === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        attempts.current.push(now);
         onLogin();
       } else if (modo === 'cadastro') {
         const pwdError = validatePasswordStrength(password);
@@ -73,7 +74,6 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         }
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        attempts.current.push(now);
 
         // Verifica se o email precisa de confirmacao
         const needsEmailConfirmation = data.user?.identities?.length === 0 || !data.session;
@@ -88,7 +88,6 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           redirectTo: window.location.origin + '/',
         });
         if (error) throw error;
-        attempts.current.push(now);
         setSucesso('Email de recuperação enviado! Verifique sua caixa de entrada.');
         setEmail('');
       }

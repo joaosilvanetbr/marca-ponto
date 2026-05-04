@@ -4,17 +4,16 @@ import { toast } from 'sonner';
 const STORAGE_KEY = 'meu-ponto-notifications';
 
 export function useNotifications() {
-  const [permissao, setPermissao] = useState<NotificationPermission>('default');
+  const [permissao, setPermissao] = useState<NotificationPermission>(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission;
+    }
+    return 'default';
+  });
   const [ativado, setAtivado] = useState(() => {
     return localStorage.getItem(STORAGE_KEY) === 'true';
   });
   const jaNotificados = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    if ('Notification' in window) {
-      setPermissao(Notification.permission);
-    }
-  }, []);
 
   const solicitarPermissao = useCallback(async () => {
     if (!('Notification' in window)) {

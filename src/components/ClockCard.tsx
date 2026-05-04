@@ -10,15 +10,13 @@ interface ClockCardProps {
   onRegistrar: (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => Promise<void>;
   onEditar: (id: number, updates: Partial<Registro>) => Promise<void>;
   onRemoverPonto: (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => Promise<void>;
-  onLimparDia: () => Promise<void>;
   onSync: () => Promise<void>;
-  onAbrirLancamentoManual: () => void;
   pendingCount: number;
   isOnline: boolean;
   onHaptic?: () => void;
 }
 
-export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia: _onLimparDia, onSync, onAbrirLancamentoManual: _onAbrirLancamentoManual, pendingCount, isOnline, onHaptic }: ClockCardProps) {
+export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onSync, pendingCount, isOnline, onHaptic }: ClockCardProps) {
   const [horaAtual, setHoraAtual] = useState(agora());
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<'entrada' | 'intervalo' | 'retorno' | 'saida' | null>(null);

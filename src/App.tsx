@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { Toaster } from 'sonner';
-import type { Registro, Profile, Tab } from '@/types';
-import { supabase, getRegistroDoDia, getRegistros, upsertRegistro, deleteRegistro, getProfile } from '@/lib/supabase';
-import { addToQueue, syncQueue, getPendingCount } from '@/lib/offline-queue';
-import { hoje, mesAtual, agora } from '@/lib/time-utils';
-import { logError } from '@/lib/error-utils';
-import { useLembretes } from '@/hooks/useLembretes';
+import { AppProvider } from '@/contexts/AppProvider';
+import { useAuth } from '@/hooks/useAuth';
+import { useApp } from '@/hooks/useApp';
+import { useRegistroDoDia } from '@/hooks/useRegistroDoDia';
+import { useRegistrosMes } from '@/hooks/useRegistrosMes';
+import { useProfile } from '@/hooks/useProfile';
+import { useAppMutations } from '@/hooks/useAppMutations';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useLembretes } from '@/hooks/useLembretes';
 import LoginForm from '@/components/LoginForm';
 import ResetPassword from '@/components/ResetPassword';
 import ClockCard from '@/components/ClockCard';
@@ -21,75 +23,44 @@ import SkeletonScreen from '@/components/SkeletonScreen';
 import TabBar from '@/components/TabBar';
 import { TabSlide } from '@/components/animations';
 
-export default function App() {
-  const [user, setUser] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState('');
-  const [activeTab, setActiveTab] = useState<Tab>('ponto');
-  const [registroHoje, setRegistroHoje] = useState<Registro | null>(null);
-  const [registrosMes, setRegistrosMes] = useState<Registro[]>([]);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [editando, setEditando] = useState<Registro | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [lancamentoAberto, setLancamentoAberto] = useState(false);
-  const [tabDirection, setTabDirection] = useState<'left' | 'right'>('right');
-  const [prevTab, setPrevTab] = useState<Tab>('ponto');
+function AppContent() {
+  const { user, userEmail, carregando: authLoading } = useAuth();
+  const {
+    activeTab, tabDirection, isOnline, pendingCount, syncing,
+    editando, lancamentoAberto, setEditando, setLancamentoAberto,
+    handleTabChange, onTouchStart, onTouchEnd,
+  } = useApp();
 
-  // Detecta se o usuário chegou via link de recuperação de senha
-  const [isRecovery, setIsRecovery] = useState(() => {
-    const hash = window.location.hash;
-    return hash && (hash.includes('type=recovery') || hash.includes('access_token'));
-  });
+  const { data: registroHoje, isLoading: loadingRegistro } = useRegistroDoDia(user);
+  const { data: registrosMes = [], isLoading: loadingRegistros } = useRegistrosMes(user);
+  const { data: profile, isLoading: loadingProfile } = useProfile(user);
 
-  const tabOrder: Tab[] = ['ponto', 'historico', 'config'];
-
-  const handleTabChange = useCallback((tab: Tab) => {
-    const currentIdx = tabOrder.indexOf(prevTab);
-    const newIdx = tabOrder.indexOf(tab);
-    setTabDirection(newIdx > currentIdx ? 'right' : 'left');
-    setPrevTab(tab);
-    setActiveTab(tab);
-  }, [prevTab]);
-
-  // Swipe entre abas
-  const [touchStartX, setTouchStartX] = useState(0);
-  const [touchStartY, setTouchStartY] = useState(0);
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStartX(touch.clientX);
-    setTouchStartY(touch.clientY);
-  }, []);
-
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    const touch = e.changedTouches[0];
-    const diffX = touch.clientX - touchStartX;
-    const diffY = touch.clientY - touchStartY;
-
-    // Só processa se for movimento horizontal significativo
-    if (Math.abs(diffX) < 80 || Math.abs(diffY) > Math.abs(diffX)) return;
-
-    const currentIdx = tabOrder.indexOf(activeTab);
-
-    if (diffX < 0 && currentIdx < tabOrder.length - 1) {
-      // Swipe para esquerda → próxima aba
-      handleTabChange(tabOrder[currentIdx + 1]);
-    } else if (diffX > 0 && currentIdx > 0) {
-      // Swipe para direita → aba anterior
-      handleTabChange(tabOrder[currentIdx - 1]);
-    }
-  }, [touchStartX, touchStartY, activeTab, handleTabChange]);
+  const {
+    handleRegistrar, handleSync, handleDelete, handleUpdate,
+    handleRemoverPonto, handleLancamentoManual,
+  } = useAppMutations();
 
   // Notificações do sistema
   const { ativado: notifAtivado, toggle: toggleNotif, notificar } = useNotifications();
 
-  // Feedback tátil (vibração) ao bater ponto
+  // Feedback tátil
   const haptic = useHaptic();
 
-  // App Badge — mostra badge no ícone quando tem sync pendente
+  // App Badge
   const { setBadge, clearBadge } = useAppBadge();
+
+  // Theme color dinâmico
+  useThemeColor(profile?.dark_mode || false);
+
+  // Lembretes/notificações
+  useLembretes(
+    registroHoje?.entrada || null,
+    registroHoje?.intervalo || null,
+    registroHoje?.retorno || null,
+    registroHoje?.saida || null,
+    profile?.jornada || '08:00',
+    notifAtivado ? notificar : undefined
+  );
 
   // Atualiza badge quando mudam os pendentes
   useEffect(() => {
@@ -100,260 +71,14 @@ export default function App() {
     }
   }, [pendingCount, setBadge, clearBadge]);
 
-  // Theme color dinâmico (status bar do navegador)
-  useThemeColor(profile?.dark_mode || false);
-
-  // Lembretes/notificações — integra com notificações do sistema
-  useLembretes(
-    registroHoje?.entrada || null,
-    registroHoje?.intervalo || null,
-    registroHoje?.retorno || null,
-    registroHoje?.saida || null,
-    profile?.jornada || '08:00',
-    notifAtivado ? notificar : undefined
-  );
-
-  // Monitora online/offline
-  useEffect(() => {
-    const onOnline = () => setIsOnline(true);
-    const onOffline = () => setIsOnline(false);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, []);
-
-  // Atualiza contagem de pendentes periodicamente
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (user) {
-        setPendingCount(getPendingCount(user));
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Checa auth inicial
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) {
-        setUser(data.session.user.id);
-        setUserEmail(data.session.user.email || '');
-      }
-      setCarregando(false);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user.id);
-        setUserEmail(session.user.email || '');
-      } else {
-        setUser(null);
-        setUserEmail('');
-      }
-    });
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
-
-  // Carrega dados quando usuário loga
-  const carregarDados = useCallback(async () => {
-    if (!user) return;
-    setCarregando(true);
-    try {
-      const [regDia, regsMes, prof] = await Promise.all([
-        getRegistroDoDia(user, hoje()),
-        getRegistros(user, mesAtual()),
-        getProfile(user),
-      ]);
-      setRegistroHoje(regDia);
-      setRegistrosMes(regsMes);
-      setProfile(prof);
-
-      if (prof?.dark_mode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } catch (err) {
-      logError('App.carregarDados', err);
-    } finally {
-      setCarregando(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    carregarDados();
-  }, [carregarDados]);
-
   // Auto-sync quando volta online
   useEffect(() => {
-    if (isOnline && pendingCount > 0) {
+    if (isOnline && pendingCount > 0 && !syncing) {
       handleSync();
     }
-  }, [isOnline]);
+  }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleRegistrar(tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') {
-    const currentUser = user;
-    if (!currentUser) return;
-
-    // Feedback tátil ao bater ponto
-    haptic.medium();
-
-    const hora = agora();
-    const base: Registro = registroHoje || {
-      user_id: currentUser,
-      data: hoje(),
-      entrada: null,
-      intervalo: null,
-      retorno: null,
-      saida: null,
-    };
-
-    const novo = { ...base, [tipo]: hora };
-
-    if (isOnline) {
-      try {
-        await upsertRegistro(currentUser, novo);
-      } catch {
-        addToQueue('upsert', novo, 'registros', currentUser);
-      }
-    } else {
-      addToQueue('upsert', novo, 'registros', currentUser);
-    }
-
-    setRegistroHoje(novo);
-    setRegistrosMes((prev) => {
-      const idx = prev.findIndex((r) => r.data === novo.data);
-      if (idx >= 0) {
-        const updated = [...prev];
-        updated[idx] = novo;
-        return updated;
-      }
-      return [...prev, novo];
-    });
-  }
-
-  async function handleSync() {
-    const currentUser = user;
-    if (syncing || !currentUser) return;
-    setSyncing(true);
-    try {
-      const result = await syncQueue(currentUser);
-      if (result.success > 0) {
-        await carregarDados();
-      }
-    } catch (err) {
-      logError('App.handleSync', err);
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  async function handleDelete(id: number) {
-    const currentUser = user;
-    if (!currentUser) return;
-    if (!isOnline) {
-      addToQueue('delete', id, 'registros', currentUser);
-      setRegistrosMes((prev) => prev.filter((r) => r.id !== id));
-      if (registroHoje?.id === id) {
-        setRegistroHoje(null);
-      }
-      return;
-    }
-    try {
-      await deleteRegistro(currentUser, id);
-      setRegistrosMes((prev) => prev.filter((r) => r.id !== id));
-      if (registroHoje?.id === id) {
-        setRegistroHoje(null);
-      }
-    } catch {
-      addToQueue('delete', id, 'registros', currentUser);
-    }
-  }
-
-  async function handleUpdate(id: number, updates: Partial<Registro>) {
-    const currentUser = user;
-    if (!currentUser) return;
-    if (!isOnline) {
-      addToQueue('update', { id, ...updates }, 'registros', currentUser);
-      const updated = { ...registroHoje, ...updates, id } as Registro;
-      setRegistroHoje(updated);
-      setRegistrosMes((prev) => prev.map((r) => (r.id === id ? { ...r, ...updates } : r)));
-      return;
-    }
-    try {
-      await upsertRegistro(currentUser, { ...registroHoje, ...updates, id } as Registro);
-      await carregarDados();
-    } catch {
-      addToQueue('update', { id, ...updates }, 'registros', currentUser);
-    }
-  }
-
-  async function handleRemoverPonto(tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') {
-    if (!registroHoje?.id) return;
-    const updates = { [tipo]: null } as Partial<Registro>;
-    await handleUpdate(registroHoje.id, updates);
-  }
-
-  async function handleLimparDia() {
-    const currentUser = user;
-    if (!registroHoje?.id || !currentUser) return;
-    if (!isOnline) {
-      addToQueue('delete', registroHoje.id, 'registros', currentUser);
-      setRegistrosMes((prev) => prev.filter((r) => r.id !== registroHoje!.id));
-      setRegistroHoje(null);
-      return;
-    }
-    try {
-      await deleteRegistro(currentUser, registroHoje.id);
-      setRegistrosMes((prev) => prev.filter((r) => r.id !== registroHoje!.id));
-      setRegistroHoje(null);
-    } catch {
-      addToQueue('delete', registroHoje.id, 'registros', currentUser);
-    }
-  }
-  async function handleLancamentoManual(registro: Registro) {
-    const currentUser = user;
-    if (!currentUser) return;
-    const fullRegistro = { ...registro, user_id: currentUser };
-    try {
-      if (isOnline) {
-        await upsertRegistro(currentUser, fullRegistro);
-        await carregarDados();
-      } else {
-        addToQueue('upsert', fullRegistro, 'registros', currentUser);
-        setRegistrosMes((prev) => {
-          const idx = prev.findIndex((r) => r.data === fullRegistro.data);
-          if (idx >= 0) {
-            const updated = [...prev];
-            updated[idx] = fullRegistro;
-            return updated;
-          }
-          return [...prev, fullRegistro];
-        });
-      }
-      setLancamentoAberto(false);
-    } catch (err) {
-      logError('App.handleLancamentoManual', err);
-    }
-  }
-
-  // Recuperacao de senha: tem prioridade sobre tudo — mostra a tela de reset
-  if (isRecovery) {
-    return (
-      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
-        <ResetPassword onVoltar={() => { setIsRecovery(false); window.location.hash = ''; }} />
-      </div>
-    );
-  }
-
-  // Tela de loading aprimorada com skeleton
-  if (carregando && !user) {
-    return <SkeletonScreen />;
-  }
+  const dadosCarregando = authLoading || loadingRegistro || loadingRegistros || loadingProfile;
 
   if (!user) {
     return (
@@ -363,8 +88,7 @@ export default function App() {
     );
   }
 
-  // Skeleton enquanto carrega dados do usuário logado
-  if (carregando && user) {
+  if (dadosCarregando) {
     return (
       <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
         <SkeletonScreen />
@@ -383,14 +107,12 @@ export default function App() {
         <TabSlide activeTab={activeTab} direction={tabDirection}>
           {activeTab === 'ponto' && (
             <ClockCard
-              registro={registroHoje}
-              profile={profile}
+              registro={registroHoje || null}
+              profile={profile || null}
               onRegistrar={handleRegistrar}
               onEditar={handleUpdate}
               onRemoverPonto={handleRemoverPonto}
-              onLimparDia={handleLimparDia}
               onSync={handleSync}
-              onAbrirLancamentoManual={() => setLancamentoAberto(true)}
               pendingCount={pendingCount}
               isOnline={isOnline}
               onHaptic={haptic.light}
@@ -400,7 +122,7 @@ export default function App() {
           {activeTab === 'historico' && (
             <BankHistory
               registros={registrosMes}
-              profile={profile}
+              profile={profile || null}
               onEdit={setEditando}
               onDelete={handleDelete}
             />
@@ -408,9 +130,9 @@ export default function App() {
 
           {activeTab === 'config' && (
             <Settings
-              profile={profile}
+              profile={profile || null}
               userEmail={userEmail}
-              onProfileUpdate={carregarDados}
+              onProfileUpdate={async () => {}}
               notificacaoAtivada={notifAtivado}
               onToggleNotificacao={toggleNotif}
             />
@@ -438,5 +160,27 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  const { isRecovery, setIsRecovery, carregando: authLoading } = useAuth();
+
+  if (isRecovery) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
+        <ResetPassword onVoltar={() => setIsRecovery(false)} />
+      </div>
+    );
+  }
+
+  if (authLoading) {
+    return <SkeletonScreen />;
+  }
+
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
   );
 }

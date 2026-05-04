@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { QueryProvider } from './contexts/QueryProvider'
+import { AuthProvider } from './contexts/AuthProvider'
 
 // Registra o Service Worker do PWA e força atualização quando há nova versão
 if ('serviceWorker' in navigator) {
@@ -33,7 +35,11 @@ try {
   }
   createRoot(rootElement).render(
     <StrictMode>
-      <App />
+      <QueryProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </QueryProvider>
     </StrictMode>,
   );
 } catch (err) {

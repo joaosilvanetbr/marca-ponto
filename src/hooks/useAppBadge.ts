@@ -1,18 +1,16 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
+
+function isBadgeSupported(): boolean {
+  return typeof navigator !== 'undefined' && 'setAppBadge' in navigator && 'clearAppBadge' in navigator;
+}
 
 /**
  * Hook para App Badge API — mostra um badge no ícone do app
  * indicando registros pendentes de sincronização.
  */
 export function useAppBadge() {
-  const supported = useRef(false);
-
-  useEffect(() => {
-    supported.current = 'setAppBadge' in navigator && 'clearAppBadge' in navigator;
-  }, []);
-
   const setBadge = useCallback((count: number) => {
-    if (!supported.current) return;
+    if (!isBadgeSupported()) return;
     try {
       if (count > 0) {
         (navigator as Navigator & { setAppBadge?: (count: number) => Promise<void> }).setAppBadge?.(count);
@@ -25,7 +23,7 @@ export function useAppBadge() {
   }, []);
 
   const clearBadge = useCallback(() => {
-    if (!supported.current) return;
+    if (!isBadgeSupported()) return;
     try {
       (navigator as Navigator & { clearAppBadge?: () => Promise<void> }).clearAppBadge?.();
     } catch {
@@ -33,5 +31,5 @@ export function useAppBadge() {
     }
   }, []);
 
-  return { setBadge, clearBadge, supported: supported.current };
+  return { setBadge, clearBadge, supported: isBadgeSupported() };
 }
