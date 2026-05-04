@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "marca-ponto",
+  "name": "pontogo-js-net-br",
   "compatibility_date": "2026-05-02",
   "observability": {
     "enabled": true
