@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import type { Registro, DiaCalendario } from '@/types';
-import { upsertRegistro, deleteRegistro, upsertCalendario, deleteCalendario } from '@/lib/supabase';
+import { upsertRegistro, updateRegistro, deleteRegistro, upsertCalendario, deleteCalendario } from '@/lib/supabase';
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
 import { logError } from '@/lib/error-utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,13 +90,12 @@ export function useAppMutations() {
       return;
     }
     try {
-      const existing = queryClient.getQueryData<Registro | null>(['registro-do-dia', currentUser]);
-      await upsertRegistro(currentUser, { ...existing, ...updates, id } as Registro);
+      await updateRegistro(currentUser, id, updates);
       invalidateData();
     } catch {
       addToQueue('update', { id, ...updates }, 'registros', currentUser);
     }
-  }, [user, isOnline, queryClient, invalidateData]);
+  }, [user, isOnline, invalidateData]);
 
   const handleRemoverPonto = useCallback(async (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => {
     const currentUser = user;

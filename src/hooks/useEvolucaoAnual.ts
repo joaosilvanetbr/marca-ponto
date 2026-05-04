@@ -13,10 +13,11 @@ export interface EvolucaoMes {
 
 export function useEvolucaoAnual(userId: string | null, ano: number, jornada: string, tolerancia: number, saldoInicial: number) {
   return useQuery({
-    queryKey: ['evolucao-anual', userId, ano],
+    queryKey: ['evolucao-anual', userId, ano, jornada, tolerancia, saldoInicial],
     queryFn: async () => {
       if (!userId) return [];
       const registros = await getRegistrosAno(userId, ano);
+      const registrosMap = new Map(registros.map((r) => [r.data, r]));
       const feriados = getFeriadosNacionais(ano);
       const jornadaMin = jornadaParaMinutos(jornada);
 
@@ -31,7 +32,7 @@ export function useEvolucaoAnual(userId: string | null, ano: number, jornada: st
 
         for (let d = 1; d <= diasNoMes; d++) {
           const dataStr = `${mesStr}-${String(d).padStart(2, '0')}`;
-          const reg = registros.find((r) => r.data === dataStr);
+          const reg = registrosMap.get(dataStr);
           const diaSemana = new Date(dataStr + 'T12:00:00').getDay();
           const isFimDeSemana = diaSemana === 0 || diaSemana === 6;
           const isFeriado = feriados.has(dataStr);

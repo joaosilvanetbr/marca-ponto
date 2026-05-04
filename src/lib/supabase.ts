@@ -15,13 +15,32 @@ if (!url || !key) {
 
 export const supabase = createClient(url || '', key || '');
 
+export function getMonthDateRange(mes: string): { start: string; end: string } {
+  const [yearStr, monthStr] = mes.split('-');
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new Error(`Mes invalido: ${mes}. Formato esperado: YYYY-MM`);
+  }
+
+  const normalizedMonth = String(month).padStart(2, '0');
+  const lastDay = new Date(year, month, 0).getDate();
+
+  return {
+    start: `${yearStr}-${normalizedMonth}-01`,
+    end: `${yearStr}-${normalizedMonth}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
 export async function getRegistros(userId: string, mes: string): Promise<Registro[]> {
+  const { start, end } = getMonthDateRange(mes);
   const { data, error } = await supabase
     .from('registros')
     .select('*')
     .eq('user_id', userId)
-    .gte('data', `${mes}-01`)
-    .lte('data', `${mes}-31`)
+    .gte('data', start)
+    .lte('data', end)
     .order('data', { ascending: true });
 
   if (error) throw error;
@@ -105,12 +124,13 @@ export async function getRegistrosAno(userId: string, ano: number): Promise<Regi
 // --- Calendário (feriados, folgas, etc) ---
 
 export async function getCalendario(userId: string, mes: string): Promise<DiaCalendario[]> {
+  const { start, end } = getMonthDateRange(mes);
   const { data, error } = await supabase
     .from('calendario')
     .select('*')
     .eq('user_id', userId)
-    .gte('data', `${mes}-01`)
-    .lte('data', `${mes}-31`)
+    .gte('data', start)
+    .lte('data', end)
     .order('data', { ascending: true });
 
   if (error) throw error;

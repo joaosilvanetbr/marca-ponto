@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { AppProvider } from '@/contexts/AppProvider';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,15 +18,16 @@ import { mesAtual } from '@/lib/time-utils';
 import LoginForm from '@/components/LoginForm';
 import ResetPassword from '@/components/ResetPassword';
 import ClockCard from '@/components/ClockCard';
-import BankHistory from '@/components/BankHistory';
-import CalendarView from '@/components/CalendarView';
-import ChartEvolucao from '@/components/ChartEvolucao';
-import Settings from '@/components/Settings';
 import EditModal from '@/components/EditModal';
 import LancamentoManual from '@/components/LancamentoManual';
 import SkeletonScreen from '@/components/SkeletonScreen';
 import TabBar from '@/components/TabBar';
 import { TabSlide } from '@/components/animations';
+
+const BankHistory = lazy(() => import('@/components/BankHistory'));
+const CalendarView = lazy(() => import('@/components/CalendarView'));
+const ChartEvolucao = lazy(() => import('@/components/ChartEvolucao'));
+const Settings = lazy(() => import('@/components/Settings'));
 
 function AppContent() {
   const { user, userEmail, carregando: authLoading } = useAuth();
@@ -88,7 +89,7 @@ function AppContent() {
     }
   }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dadosCarregando = authLoading || loadingRegistro || loadingRegistros || loadingProfile || loadingCalendario;
+  const dadosCarregando = authLoading || loadingRegistro || loadingProfile;
 
   if (!user) {
     return (
@@ -130,39 +131,75 @@ function AppContent() {
           )}
 
           {activeTab === 'historico' && (
-            <div className="space-y-4">
-              <ChartEvolucao
-                userId={user}
-                jornada={profile?.jornada || '08:00'}
-                tolerancia={profile?.tolerancia || 10}
-                saldoInicial={profile?.saldo_inicial || 0}
-              />
-              <BankHistory
-                registros={registrosMes}
-                profile={profile || null}
-                userId={user}
-                onEdit={setEditando}
-                onDelete={handleDelete}
-              />
-            </div>
+            loadingRegistros ? (
+              <div className="ios-card rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                Carregando historico...
+              </div>
+            ) : (
+              <Suspense
+                fallback={
+                  <div className="ios-card rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    Carregando historico...
+                  </div>
+                }
+              >
+                <div className="space-y-4">
+                  <ChartEvolucao
+                    userId={user}
+                    jornada={profile?.jornada || '08:00'}
+                    tolerancia={profile?.tolerancia || 10}
+                    saldoInicial={profile?.saldo_inicial || 0}
+                  />
+                  <BankHistory
+                    registros={registrosMes}
+                    profile={profile || null}
+                    userId={user}
+                    onEdit={setEditando}
+                    onDelete={handleDelete}
+                  />
+                </div>
+              </Suspense>
+            )
           )}
 
           {activeTab === 'calendario' && (
-            <CalendarView
-              calendario={calendarioMes}
-              onMarcar={handleMarcarCalendario}
-              onRemover={handleRemoverCalendario}
-            />
+            loadingCalendario ? (
+              <div className="ios-card rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                Carregando calendario...
+              </div>
+            ) : (
+              <Suspense
+                fallback={
+                  <div className="ios-card rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    Carregando calendario...
+                  </div>
+                }
+              >
+                <CalendarView
+                  calendario={calendarioMes}
+                  onMarcar={handleMarcarCalendario}
+                  onRemover={handleRemoverCalendario}
+                />
+              </Suspense>
+            )
           )}
 
           {activeTab === 'config' && (
-            <Settings
-              profile={profile || null}
-              userEmail={userEmail}
-              onProfileUpdate={async () => {}}
-              notificacaoAtivada={notifAtivado}
-              onToggleNotificacao={toggleNotif}
-            />
+            <Suspense
+              fallback={
+                <div className="ios-card rounded-2xl p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                  Carregando configuracoes...
+                </div>
+              }
+            >
+              <Settings
+                profile={profile || null}
+                userEmail={userEmail}
+                onProfileUpdate={async () => {}}
+                notificacaoAtivada={notifAtivado}
+                onToggleNotificacao={toggleNotif}
+              />
+            </Suspense>
           )}
         </TabSlide>
       </div>
