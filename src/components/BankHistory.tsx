@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { Registro, Profile } from '@/types';
 import { mesAtual, diasDoMes, nomeDiaSemana, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
 import { motion } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays, Download, Filter } from 'lucide-react';
 
 type Filtro = 'todos' | 'com_registro' | 'sem_registro';
@@ -177,23 +178,99 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
         </motion.button>
       </div>
 
-      {/* Lista de dias */}
+      {/* Lista de dias — Virtual Scroll */}
       <div className="ios-card rounded-2xl p-4 shadow-xl">
         <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
           <Clock className="w-4 h-4" /> Registros do mês
         </h3>
-        <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-          {itemsFiltrados.map((item) => {
-            const temRegistro = !!item.reg;
-            const isHoje = item.isHoje;
+        <VirtualDiaList
+          items={itemsFiltrados}
+          onEdit={onEdit}
+          onDelete={handleDelete}
+          deletando={deletando}
+        />
+      </div>
+    </motion.div>
+  );
+}
 
-            return (
+/* ============================================
+   VirtualDiaList — Lista virtualizada
+   ============================================ */
+
+interface DiaItem {
+  data: string;
+  reg: Registro | null;
+  trab: number;
+  saldo: number;
+  isHoje: boolean;
+  isFuturo: boolean;
+  isFimDeSemana: boolean;
+  status: 'completo' | 'faltante';
+}
+
+interface VirtualDiaListProps {
+  items: DiaItem[];
+  onEdit: (registro: Registro) => void;
+  onDelete: (id: number) => Promise<void>;
+  deletando: number | null;
+}
+
+const ITEM_HEIGHT = 88; // altura fixa estimada de cada linha
+
+function VirtualDiaList({ items, onEdit, onDelete, deletando }: VirtualDiaListProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5,
+  });
+
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-8 text-slate-400 dark:text-slate-500">
+        Nenhum registro encontrado com este filtro
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={parentRef}
+      className="max-h-[50vh] overflow-y-auto pr-1"
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualItem) => {
+          const item = items[virtualItem.index];
+          const temRegistro = !!item.reg;
+          const isHoje = item.isHoje;
+
+          return (
+            <div
+              key={item.data}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualItem.size}px`,
+                transform: `translateY(${virtualItem.start}px)`,
+                paddingBottom: '8px',
+              }}
+            >
               <motion.div
-                key={item.data}
                 initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-center gap-3 p-3 rounded-2xl transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-2xl transition-all h-full ${
                   isHoje ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200 dark:border-cyan-800' :
                   temRegistro ? 'bg-slate-50 dark:bg-slate-800' :
                   'bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900'
@@ -254,19 +331,16 @@ export default function BankHistory({ registros, profile, onEdit, onDelete }: Ba
                     <motion.button whileTap={{ scale: 0.85 }} onClick={() => onEdit(item.reg!)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                       <Pencil className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                     </motion.button>
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleDelete(item.reg!.id!)} disabled={deletando === item.reg!.id} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onDelete(item.reg!.id!)} disabled={deletando === item.reg!.id} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
                       {deletando === item.reg!.id ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
                     </motion.button>
                   </div>
                 )}
               </motion.div>
-            );
-          })}
-          {itemsFiltrados.length === 0 && (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500">Nenhum registro encontrado com este filtro</div>
-          )}
-        </div>
+            </div>
+          );
+        })}
       </div>
-    </motion.div>
+    </div>
   );
 }

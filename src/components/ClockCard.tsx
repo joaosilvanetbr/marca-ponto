@@ -15,9 +15,10 @@ interface ClockCardProps {
   onAbrirLancamentoManual: () => void;
   pendingCount: number;
   isOnline: boolean;
+  onHaptic?: () => void;
 }
 
-export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia: _onLimparDia, onSync, onAbrirLancamentoManual: _onAbrirLancamentoManual, pendingCount, isOnline }: ClockCardProps) {
+export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onLimparDia: _onLimparDia, onSync, onAbrirLancamentoManual: _onAbrirLancamentoManual, pendingCount, isOnline, onHaptic }: ClockCardProps) {
   const [horaAtual, setHoraAtual] = useState(agora());
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<'entrada' | 'intervalo' | 'retorno' | 'saida' | null>(null);
@@ -245,10 +246,10 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
                   {isDone && !isEditing && (
                     <div className="flex items-center gap-1">
-                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => iniciarEdicao(item.key, item.time!)} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Editar">
+                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => { onHaptic?.(); iniciarEdicao(item.key, item.time!); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Editar">
                         <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                       </motion.button>
-                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => handleRemover(item.key)} disabled={removendo === item.key} className="p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50" title="Excluir ponto">
+                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => { onHaptic?.(); handleRemover(item.key); }} disabled={removendo === item.key} className="p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50" title="Excluir ponto">
                         {removendo === item.key ? <Loader2 className="w-3.5 h-3.5 text-rose-500 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-rose-500" />}
                       </motion.button>
                     </div>
