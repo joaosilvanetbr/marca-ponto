@@ -1,5 +1,5 @@
 export interface Registro {
-  id?: number;
+  id?: string;
   user_id: string;
   data: string;
   entrada: string | null;
@@ -21,7 +21,7 @@ export interface Profile {
 }
 
 export interface DiaCalendario {
-  id?: number;
+  id?: string;
   user_id: string;
   data: string;
   tipo: 'feriado' | 'folga' | 'licenca' | 'atestado';

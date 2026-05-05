@@ -68,7 +68,7 @@ export async function upsertRegistro(userId: string, registro: Registro): Promis
   if (error) throw error;
 }
 
-export async function updateRegistro(userId: string, id: number, updates: Partial<Registro>): Promise<void> {
+export async function updateRegistro(userId: string, id: string, updates: Partial<Registro>): Promise<void> {
   const { error } = await supabase
     .from('registros')
     .update(updates)
@@ -78,7 +78,7 @@ export async function updateRegistro(userId: string, id: number, updates: Partia
   if (error) throw error;
 }
 
-export async function deleteRegistro(userId: string, id: number): Promise<void> {
+export async function deleteRegistro(userId: string, id: string): Promise<void> {
   const { error } = await supabase
     .from('registros')
     .delete()

@@ -65,7 +65,7 @@ export function useAppMutations() {
     }
   }, [user, setSyncing, invalidateData]);
 
-  const handleDelete = useCallback(async (id: number) => {
+  const handleDelete = useCallback(async (id: string) => {
     const currentUser = user;
     if (!currentUser) return;
     if (!isOnline) {
@@ -81,7 +81,7 @@ export function useAppMutations() {
     }
   }, [user, isOnline, invalidateData]);
 
-  const handleUpdate = useCallback(async (id: number, updates: Partial<Registro>) => {
+  const handleUpdate = useCallback(async (id: string, updates: Partial<Registro>) => {
     const currentUser = user;
     if (!currentUser) return;
     if (!isOnline) {

@@ -9,7 +9,7 @@ interface ClockCardProps {
   registro: Registro | null;
   profile: Profile | null;
   onRegistrar: (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => Promise<void>;
-  onEditar: (id: number, updates: Partial<Registro>) => Promise<void>;
+  onEditar: (id: string, updates: Partial<Registro>) => Promise<void>;
   onRemoverPonto: (tipo: 'entrada' | 'intervalo' | 'retorno' | 'saida') => Promise<void>;
   onSync: () => Promise<void>;
   pendingCount: number;

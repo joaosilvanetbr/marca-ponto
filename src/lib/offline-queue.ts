@@ -144,6 +144,7 @@ export async function syncQueue(userId: string): Promise<{ success: number; fail
       const errorMessage = error.message?.toLowerCase() || '';
       console.log('DEBUG: Erro detectado no sync:', errorMessage);
       const isPermanent = errorMessage.includes('rls') || 
+                          errorMessage.includes('security policy') || 
                           errorMessage.includes('permission') || 
                           errorMessage.includes('403');
 

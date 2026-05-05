@@ -14,12 +14,12 @@ interface BankHistoryProps {
   profile: Profile | null;
   userId: string | null;
   onEdit: (registro: Registro) => void;
-  onDelete: (id: number) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export default function BankHistory({ registros, profile, userId, onEdit, onDelete }: BankHistoryProps) {
   const [mesSelecionado, setMesSelecionado] = useState(mesAtual());
-  const [deletando, setDeletando] = useState<number | null>(null);
+  const [deletando, setDeletando] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todos');
 
   const jornadaMin = profile ? jornadaParaMinutos(profile.jornada) : 480;
@@ -98,7 +98,7 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
     setMesSelecionado(`${novo.getFullYear()}-${String(novo.getMonth() + 1).padStart(2, '0')}`);
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     setDeletando(id);
     try { await onDelete(id); } finally { setDeletando(null); }
   }
@@ -261,8 +261,8 @@ interface DiaItem {
 interface VirtualDiaListProps {
   items: DiaItem[];
   onEdit: (registro: Registro) => void;
-  onDelete: (id: number) => Promise<void>;
-  deletando: number | null;
+  onDelete: (id: string) => Promise<void>;
+  deletando: string | null;
 }
 
 const ITEM_HEIGHT = 88; // altura fixa estimada de cada linha

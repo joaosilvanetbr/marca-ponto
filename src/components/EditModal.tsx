@@ -4,7 +4,7 @@ import { X, Save, Loader2 } from 'lucide-react';
 
 interface EditModalProps {
   registro: Registro;
-  onSave: (id: number, updates: Partial<Registro>) => Promise<void>;
+  onSave: (id: string, updates: Partial<Registro>) => Promise<void>;
   onClose: () => void;
 }
 

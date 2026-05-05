@@ -59,10 +59,10 @@ describe('useAppMutations.handleUpdate', () => {
     });
 
     await act(async () => {
-      await result.current.handleUpdate(42, { observacao: 'ajuste' });
+      await result.current.handleUpdate('42', { observacao: 'ajuste' });
     });
 
-    expect(mocks.updateRegistro).toHaveBeenCalledWith('user-1', 42, { observacao: 'ajuste' });
+    expect(mocks.updateRegistro).toHaveBeenCalledWith('user-1', '42', { observacao: 'ajuste' });
     expect(mocks.addToQueue).not.toHaveBeenCalled();
   });
 
@@ -74,13 +74,13 @@ describe('useAppMutations.handleUpdate', () => {
     });
 
     await act(async () => {
-      await result.current.handleUpdate(7, { observacao: 'offline' });
+      await result.current.handleUpdate('7', { observacao: 'offline' });
     });
 
     expect(mocks.updateRegistro).not.toHaveBeenCalled();
     expect(mocks.addToQueue).toHaveBeenCalledWith(
       'update',
-      { id: 7, observacao: 'offline' },
+      { id: '7', observacao: 'offline' },
       'registros',
       'user-1'
     );
