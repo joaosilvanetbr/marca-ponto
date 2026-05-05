@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 2. TABELA: registros
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.registros (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     data DATE NOT NULL,
     entrada TIME,
@@ -40,7 +40,7 @@ CREATE INDEX IF NOT EXISTS idx_registros_user_data ON public.registros(user_id, 
 -- 3. TABELA: calendario
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.calendario (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     data DATE NOT NULL,
     tipo TEXT NOT NULL CHECK (tipo IN ('feriado', 'folga', 'licenca', 'atestado')),

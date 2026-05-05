@@ -280,8 +280,12 @@ function VirtualDiaList({ items, onEdit, onDelete, deletando }: VirtualDiaListPr
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-8 text-slate-400 dark:text-slate-500">
-        Nenhum registro encontrado com este filtro
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+          <CalendarDays className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+        </div>
+        <p className="text-slate-500 dark:text-slate-400 font-medium">Nenhum registro encontrado</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">Tente alterar os filtros acima.</p>
       </div>
     );
   }
