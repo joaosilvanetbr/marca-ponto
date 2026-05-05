@@ -1,6 +1,6 @@
-﻿import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { Registro, Profile, DiaCalendario } from '@/types';
-import { mesAtual, diasDoMes, nomeDiaSemana, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
+import { mesAtual, diasDoMes, nomeDiaSemana, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, paraMinutos, paraHora, formatarMesAno } from '@/lib/time-utils';
 import { getFeriadosNacionais, type FeriadoInfo } from '@/lib/feriados';
 import { useCalendario } from '@/hooks/useCalendario';
 import { motion } from 'framer-motion';
@@ -22,7 +22,7 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
   const [deletando, setDeletando] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todos');
 
-  const jornadaMin = profile ? jornadaParaMinutos(profile.jornada) : 480;
+  const jornadaMin = profile ? paraMinutos(profile.jornada) : 480;
   const tolerancia = profile?.tolerancia || 10;
 
   const registrosMap = useMemo(() => {
@@ -99,6 +99,7 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
   }
 
   async function handleDelete(id: string) {
+    if (!confirm('Excluir este registro? Esta ação não pode ser desfeita.')) return;
     setDeletando(id);
     try { await onDelete(id); } finally { setDeletando(null); }
   }
@@ -413,10 +414,10 @@ function VirtualDiaList({ items, onEdit, onDelete, deletando }: VirtualDiaListPr
                 </div>
                 {temRegistro && (
                   <div className="flex items-center gap-1">
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onEdit(item.reg!)} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onEdit(item.reg!)} aria-label="Editar registro" className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                       <Pencil className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                     </motion.button>
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onDelete(item.reg!.id!)} disabled={deletando === item.reg!.id} className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => onDelete(item.reg!.id!)} disabled={deletando === item.reg!.id} aria-label="Excluir registro" className="p-2 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
                       {deletando === item.reg!.id ? <Loader2 className="w-4 h-4 text-rose-500 animate-spin" /> : <Trash2 className="w-4 h-4 text-rose-500" />}
                     </motion.button>
                   </div>

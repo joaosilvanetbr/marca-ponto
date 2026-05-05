@@ -31,14 +31,4 @@ export interface DiaCalendario {
 
 export type TipoRegistro = 'entrada' | 'intervalo' | 'retorno' | 'saida';
 
-export interface RegistroDia {
-  data: string;
-  entrada?: string;
-  intervalo?: string;
-  retorno?: string;
-  saida?: string;
-  minutosTrabalhados: number;
-  saldoMinutos: number;
-}
-
 export type Tab = 'ponto' | 'historico' | 'calendario' | 'config';

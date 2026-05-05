@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Registro } from '@/types';
 import { X, Loader2, CalendarDays } from 'lucide-react';
+import { hoje } from '@/lib/time-utils';
 
 interface LancamentoManualProps {
   userId: string;
@@ -12,7 +13,10 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
   const [data, setData] = useState(() => {
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
-    return ontem.toISOString().split('T')[0];
+    const y = ontem.getFullYear();
+    const m = String(ontem.getMonth() + 1).padStart(2, '0');
+    const d = String(ontem.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   });
   const [entrada, setEntrada] = useState('08:00');
   const [intervalo, setIntervalo] = useState('12:00');
@@ -92,7 +96,7 @@ export default function LancamentoManual({ userId, onSalvar, onClose }: Lancamen
             <input
               type="date"
               value={data}
-              max={new Date().toISOString().split('T')[0]}
+              max={hoje()}
               onChange={(e) => setData(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
             />

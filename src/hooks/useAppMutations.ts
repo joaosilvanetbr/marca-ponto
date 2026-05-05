@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 import type { Registro, DiaCalendario } from '@/types';
 import { upsertRegistro, updateRegistro, deleteRegistro, upsertCalendario, deleteCalendario } from '@/lib/supabase';
 import { addToQueue, syncQueue } from '@/lib/offline-queue';
@@ -41,9 +42,11 @@ export function useAppMutations() {
         await upsertRegistro(currentUser, novo);
       } catch {
         addToQueue('upsert', novo, 'registros', currentUser);
+        toast.warning('Falha na sincronização. Registro salvo localmente.', { duration: 4000 });
       }
     } else {
       addToQueue('upsert', novo, 'registros', currentUser);
+      toast.warning('Modo offline — registro salvo e será sincronizado ao reconectar.', { duration: 4000 });
     }
 
     invalidateData();
@@ -70,6 +73,7 @@ export function useAppMutations() {
     if (!currentUser) return;
     if (!isOnline) {
       addToQueue('delete', id, 'registros', currentUser);
+      toast.warning('Offline — exclusão salva e será aplicada ao reconectar.', { duration: 4000 });
       invalidateData();
       return;
     }
@@ -78,6 +82,7 @@ export function useAppMutations() {
       invalidateData();
     } catch {
       addToQueue('delete', id, 'registros', currentUser);
+      toast.warning('Falha ao excluir. Operação salva localmente.', { duration: 4000 });
     }
   }, [user, isOnline, invalidateData]);
 
@@ -86,6 +91,7 @@ export function useAppMutations() {
     if (!currentUser) return;
     if (!isOnline) {
       addToQueue('update', { id, ...updates }, 'registros', currentUser);
+      toast.warning('Offline — alteração salva e será aplicada ao reconectar.', { duration: 4000 });
       invalidateData();
       return;
     }
@@ -94,6 +100,7 @@ export function useAppMutations() {
       invalidateData();
     } catch {
       addToQueue('update', { id, ...updates }, 'registros', currentUser);
+      toast.warning('Falha ao atualizar. Operação salva localmente.', { duration: 4000 });
     }
   }, [user, isOnline, invalidateData]);
 

@@ -3,6 +3,7 @@ import type { Profile } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { logError } from '@/lib/error-utils';
+import { validatePasswordStrength } from '@/lib/auth-utils';
 import { motion } from 'framer-motion';
 import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida } from 'lucide-react';
 import { useLembreteConfig } from '@/hooks/useLembreteConfig';
@@ -147,8 +148,9 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
   // Atualizar senha
   async function handleSalvarSenha() {
-    if (novaSenha.length < 6) {
-      showStatus('error', 'A senha deve ter pelo menos 6 caracteres', 3000);
+    const pwdError = validatePasswordStrength(novaSenha);
+    if (pwdError) {
+      showStatus('error', pwdError, 4000);
       return;
     }
     if (novaSenha !== confirmarSenha) {
@@ -170,7 +172,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.reload();
+    // onAuthStateChange em AuthProvider limpa o estado automaticamente
   }
 
   const nomeExibido = nome || userEmail.split('@')[0];

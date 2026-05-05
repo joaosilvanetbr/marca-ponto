@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Toaster } from 'sonner';
 import { AppProvider } from '@/contexts/AppProvider';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +14,7 @@ import { useAppBadge } from '@/hooks/useAppBadge';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLembretes } from '@/hooks/useLembretes';
 import { useLembreteConfig } from '@/hooks/useLembreteConfig';
+import { useQueryClient } from '@tanstack/react-query';
 import { mesAtual } from '@/lib/time-utils';
 import LoginForm from '@/components/LoginForm';
 import ResetPassword from '@/components/ResetPassword';
@@ -47,6 +48,8 @@ function AppContent() {
     handleRemoverPonto, handleLancamentoManual,
     handleMarcarCalendario, handleRemoverCalendario,
   } = useAppMutations();
+
+  const queryClient = useQueryClient();
 
   // Notificações do sistema
   const { ativado: notifAtivado, toggle: toggleNotif, notificar } = useNotifications();
@@ -83,11 +86,14 @@ function AppContent() {
   }, [pendingCount, setBadge, clearBadge]);
 
   // Auto-sync quando volta online
+  const handleSyncRef = useRef(handleSync);
+  useEffect(() => { handleSyncRef.current = handleSync; }, [handleSync]);
+
   useEffect(() => {
     if (isOnline && pendingCount > 0 && !syncing) {
-      handleSync();
+      handleSyncRef.current();
     }
-  }, [isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOnline, pendingCount, syncing]);
 
   const dadosCarregando = authLoading || loadingRegistro || loadingProfile;
 
@@ -195,7 +201,9 @@ function AppContent() {
               <Settings
                 profile={profile || null}
                 userEmail={userEmail}
-                onProfileUpdate={async () => {}}
+                onProfileUpdate={async () => {
+                  await queryClient.invalidateQueries({ queryKey: ['profile'] });
+                }}
                 notificacaoAtivada={notifAtivado}
                 onToggleNotificacao={toggleNotif}
               />

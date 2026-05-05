@@ -69,7 +69,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (user) {
         setPendingCount(getPendingCount(user));
       }
-    }, 1000);
+    }, 5000); // 5 segundos é suficiente para a UX
     return () => clearInterval(interval);
   }, [user]);
 

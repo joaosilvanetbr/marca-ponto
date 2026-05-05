@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Registro, Profile } from '@/types';
-import { agora, paraHora, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos, mensagemPrevisao, hoje } from '@/lib/time-utils';
+import { agora, paraHora, fmtHora, calcularMinutosTrabalhados, calcularSaldoDia, paraMinutos, mensagemPrevisao, hoje } from '@/lib/time-utils';
 import { isFeriadoNacional } from '@/lib/feriados';
 import { Clock, LogIn, Coffee, Play, LogOut, Loader2, WifiOff, Save, X, Pencil, Trash2, PartyPopper, Minus, Plus } from 'lucide-react';
 
@@ -38,7 +38,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
     registro?.saida || null
   );
 
-  const saldo = profile ? calcularSaldoDia(minutosTrabalhados, jornadaParaMinutos(profile.jornada), profile.tolerancia) : 0;
+  const saldo = profile ? calcularSaldoDia(minutosTrabalhados, paraMinutos(profile.jornada), profile.tolerancia) : 0;
   const jornadaStr = profile?.jornada || '08:00';
 
   const feriadoHoje = isFeriadoNacional(hoje());
@@ -287,10 +287,10 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
                   {isDone && !isEditing && (
                     <div className="flex items-center gap-1">
-                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => { onHaptic?.(); iniciarEdicao(item.key, item.time!); }} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Editar">
+                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => { onHaptic?.(); iniciarEdicao(item.key, item.time!); }} aria-label={`Editar ${item.label}`} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                         <Pencil className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                       </motion.button>
-                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => { onHaptic?.(); handleRemover(item.key); }} disabled={removendo === item.key} className="p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50" title="Excluir ponto">
+                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => { onHaptic?.(); handleRemover(item.key); }} disabled={removendo === item.key} aria-label={`Excluir ${item.label}`} className="p-1.5 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors disabled:opacity-50">
                         {removendo === item.key ? <Loader2 className="w-3.5 h-3.5 text-rose-500 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 text-rose-500" />}
                       </motion.button>
                     </div>

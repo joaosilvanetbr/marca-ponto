@@ -3,7 +3,6 @@
 -- Pode rodar múltiplas vezes sem erro
 -- ============================================
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================
 -- 1. TABELA: profiles
@@ -21,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 2. TABELA: registros
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.registros (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     data DATE NOT NULL,
     entrada TIME,
@@ -40,7 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_registros_user_data ON public.registros(user_id, 
 -- 3. TABELA: calendario
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.calendario (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     data DATE NOT NULL,
     tipo TEXT NOT NULL CHECK (tipo IN ('feriado', 'folga', 'licenca', 'atestado')),
@@ -210,26 +209,6 @@ CREATE TRIGGER audit_registros
     AFTER INSERT OR UPDATE OR DELETE ON public.registros
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_audit_registros();
-
--- ============================================
--- 7. REGRAS DE AUTH (redirecionamento)
--- ============================================
-
--- Configura o site URL para o domínio correto
--- Substitua pelo seu domínio real:
--- UPDATE auth.config SET site_url = 'https://pontoteste.js.net.br';
-
--- ============================================
--- 8. NOTAS DE MIGRACAO
--- ============================================
-
--- RECOMENDACAO: Migrar IDs de registros e calendario de SERIAL para UUID
--- para mitigar ataques de IDOR (Insecure Direct Object Reference).
--- 
--- Passos para migracao (requer backup):
--- 1. ALTER TABLE public.registros ALTER COLUMN id TYPE UUID USING uuid_generate_v4();
--- 2. ALTER TABLE public.calendario ALTER COLUMN id TYPE UUID USING uuid_generate_v4();
--- 3. Atualizar tipos TypeScript: Registro.id e DiaCalendario.id para string
 
 -- ============================================
 -- FIM

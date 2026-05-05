@@ -113,8 +113,6 @@ export async function syncQueue(userId: string): Promise<{ success: number; fail
   const remaining: QueueItem[] = [];
 
   for (const item of queue) {
-    console.log('Fila: processando item', item.id, 'retries:', item.retries);
-    // Seguranca: descarta itens de outros usuarios (ex: localStorage manipulado)
     if (item.userId && item.userId !== userId) {
       failed++;
       continue;
@@ -140,16 +138,14 @@ export async function syncQueue(userId: string): Promise<{ success: number; fail
         }
       }
       success++;
-    } catch (error: any) {
-      const errorMessage = error.message?.toLowerCase() || '';
-      console.log('DEBUG: Erro detectado no sync:', errorMessage);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? (error.message?.toLowerCase() || '') : '';
       const isPermanent = errorMessage.includes('rls') || 
                           errorMessage.includes('security policy') || 
                           errorMessage.includes('permission') || 
                           errorMessage.includes('403');
 
       if (isPermanent) {
-        console.log('Fila: Erro permanente, descartando item', item.id);
         failed++;
       } else {
         item.retries++;

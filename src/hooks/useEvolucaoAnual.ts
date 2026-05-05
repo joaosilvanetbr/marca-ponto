@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRegistrosAno } from '@/lib/supabase';
 import { getFeriadosNacionais } from '@/lib/feriados';
-import { calcularMinutosTrabalhados, calcularSaldoDia, jornadaParaMinutos } from '@/lib/time-utils';
+import { calcularMinutosTrabalhados, calcularSaldoDia, paraMinutos } from '@/lib/time-utils';
 
 export interface EvolucaoMes {
   mes: string;
@@ -19,7 +19,7 @@ export function useEvolucaoAnual(userId: string | null, ano: number, jornada: st
       const registros = await getRegistrosAno(userId, ano);
       const registrosMap = new Map(registros.map((r) => [r.data, r]));
       const feriados = getFeriadosNacionais(ano);
-      const jornadaMin = jornadaParaMinutos(jornada);
+      const jornadaMin = paraMinutos(jornada);
 
       const meses: EvolucaoMes[] = [];
       let acumulado = saldoInicial;

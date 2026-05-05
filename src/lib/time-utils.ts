@@ -37,10 +37,13 @@ export function formatarSaldo(minutos: number): string {
 }
 
 /**
- * Data atual em formato ISO "YYYY-MM-DD"
+ * Data atual em formato ISO "YYYY-MM-DD" usando timezone local do dispositivo.
+ * Não usa toISOString() pois este retorna UTC, o que causaria data errada
+ * para usuários no Brasil (UTC-3) após as 21h.
  */
 export function hoje(): string {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 /**
@@ -120,12 +123,7 @@ export function calcularSaldoDia(
   return diferenca;
 }
 
-/**
- * Converte string "HH:MM" para minutos (útil para jornada)
- */
-export function jornadaParaMinutos(jornada: string): number {
-  return paraMinutos(jornada);
-}
+
 
 /**
  * Gera uma lista de dias do mês
