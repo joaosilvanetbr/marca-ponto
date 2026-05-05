@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { logError } from '@/lib/error-utils';
 import { validatePasswordStrength } from '@/lib/auth-utils';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida } from 'lucide-react';
+import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida, CalendarDays } from 'lucide-react';
 import { useLembreteConfig } from '@/hooks/useLembreteConfig';
 
 interface SettingsProps {
@@ -19,8 +19,7 @@ interface SettingsProps {
 export default function Settings({ profile, userEmail, onProfileUpdate, notificacaoAtivada = false, onToggleNotificacao }: SettingsProps) {
   const { config: lembreteConfig, save: saveLembrete } = useLembreteConfig();
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
-  const [tolerancia, setTolerancia] = useState(profile?.tolerancia || 10);
-  const [saldoInicial, setSaldoInicial] = useState(profile?.saldo_inicial || 0);
+  const [diasTrabalho, setDiasTrabalho] = useState<number[]>(profile?.dias_trabalho || [1, 2, 3, 4, 5]);
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
 
   // Conta
@@ -36,8 +35,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileId = profile?.id;
   const profileJornada = profile?.jornada;
-  const profileTolerancia = profile?.tolerancia;
-  const profileSaldoInicial = profile?.saldo_inicial;
+
   const profileDarkMode = profile?.dark_mode;
 
   // Busca nome do user_metadata
@@ -51,13 +49,12 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
   // Sincroniza estados locais quando o profile muda
   useEffect(() => {
-    if (profileId && profileJornada && profileTolerancia !== undefined && profileSaldoInicial !== undefined && profileDarkMode !== undefined) {
+    if (profileId && profileJornada && profileDarkMode !== undefined) {
       setJornada(profileJornada);
-      setTolerancia(profileTolerancia);
-      setSaldoInicial(profileSaldoInicial);
       setDarkMode(profileDarkMode);
+      if (profile?.dias_trabalho) setDiasTrabalho(profile.dias_trabalho);
     }
-  }, [profileId, profileJornada, profileTolerancia, profileSaldoInicial, profileDarkMode]);
+  }, [profileId, profileJornada, profileDarkMode, profile?.dias_trabalho]);
 
   function showStatus(value: string, msg: string, duration = 3000) {
     setStatus(value);
@@ -79,7 +76,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     }
   }
 
-  // Debounced auto-save para jornada, tolerancia e saldoInicial
+  // Debounced auto-save para jornada
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function scheduleSave(field: keyof Profile, value: unknown) {
@@ -95,15 +92,18 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     scheduleSave('jornada', value);
   }
 
-  function handleToleranciaChange(value: number) {
-    setTolerancia(value);
-    scheduleSave('tolerancia', value);
+  function toggleDiaTrabalho(dia: number) {
+    let novosDias = [...diasTrabalho];
+    if (novosDias.includes(dia)) {
+      novosDias = novosDias.filter(d => d !== dia);
+    } else {
+      novosDias.push(dia);
+    }
+    setDiasTrabalho(novosDias);
+    scheduleSave('dias_trabalho', novosDias);
   }
 
-  function handleSaldoInicialChange(value: number) {
-    setSaldoInicial(value);
-    scheduleSave('saldo_inicial', value);
-  }
+
 
   // Auto-salva o tema imediatamente
   async function toggleTema() {
@@ -373,48 +373,31 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
           />
         </div>
 
-        {/* Tolerancia */}
+        {/* Dias de Trabalho */}
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-              <span className="text-sm font-bold text-amber-600 dark:text-amber-400">±</span>
+            <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
+              <CalendarDays className="w-5 h-5 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Tolerancia</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Minutos de margem sem contar saldo</div>
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Dias de trabalho</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500">Selecione os dias da sua escala</div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={60}
-              value={tolerancia}
-              onChange={(e) => handleToleranciaChange(parseInt(e.target.value, 10))}
-              className="flex-1 accent-cyan-500"
-            />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200 w-12 text-right">{tolerancia}min</span>
+          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 mt-3">
+            {[{ n: 0, l: 'D' }, { n: 1, l: 'S' }, { n: 2, l: 'T' }, { n: 3, l: 'Q' }, { n: 4, l: 'Q' }, { n: 5, l: 'S' }, { n: 6, l: 'S' }].map((dia) => {
+              const ativo = diasTrabalho.includes(dia.n);
+              return (
+                <button
+                  key={dia.n}
+                  onClick={() => toggleDiaTrabalho(dia.n)}
+                  className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${ativo ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'bg-transparent text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                >
+                  {dia.l}
+                </button>
+              );
+            })}
           </div>
-        </div>
-
-        {/* Saldo Inicial */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">B</span>
-            </div>
-            <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Saldo inicial</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Banco de horas anterior (em minutos)</div>
-            </div>
-          </div>
-          <input
-            type="number"
-            value={saldoInicial}
-            onChange={(e) => handleSaldoInicialChange(parseInt(e.target.value || '0', 10))}
-            placeholder="Ex: 120 para +2h, -120 para -2h"
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
-          />
         </div>
 
         {/* Lembretes */}

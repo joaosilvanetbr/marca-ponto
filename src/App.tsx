@@ -27,7 +27,6 @@ import { TabSlide } from '@/components/animations';
 
 const BankHistory = lazy(() => import('@/components/BankHistory'));
 const CalendarView = lazy(() => import('@/components/CalendarView'));
-const ChartEvolucao = lazy(() => import('@/components/ChartEvolucao'));
 const Settings = lazy(() => import('@/components/Settings'));
 
 function AppContent() {
@@ -149,13 +148,6 @@ function AppContent() {
                   </div>
                 }
               >
-                <div className="space-y-4">
-                  <ChartEvolucao
-                    userId={user}
-                    jornada={profile?.jornada || '08:00'}
-                    tolerancia={profile?.tolerancia || 10}
-                    saldoInicial={profile?.saldo_inicial || 0}
-                  />
                   <BankHistory
                     registros={registrosMes}
                     profile={profile || null}
@@ -163,7 +155,6 @@ function AppContent() {
                     onEdit={setEditando}
                     onDelete={handleDelete}
                   />
-                </div>
               </Suspense>
             )
           )}

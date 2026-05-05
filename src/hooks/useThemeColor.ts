@@ -15,6 +15,11 @@ export function useThemeColor(isDark: boolean) {
     if (metaTag) {
       metaTag.setAttribute('content', dark ? THEME_COLORS.dark : THEME_COLORS.light);
     }
+    if (dark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
   useEffect(() => {

@@ -38,7 +38,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
     registro?.saida || null
   );
 
-  const saldo = profile ? calcularSaldoDia(minutosTrabalhados, paraMinutos(profile.jornada), profile.tolerancia) : 0;
+  const saldo = profile ? calcularSaldoDia(minutosTrabalhados, paraMinutos(profile.jornada)) : 0;
   const jornadaStr = profile?.jornada || '08:00';
 
   const feriadoHoje = isFeriadoNacional(hoje());
@@ -236,7 +236,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
           </div>
 
           <div className="mt-3 text-center">
-            <span className="text-xs text-slate-400 dark:text-slate-500">Jornada: {jornadaStr} | Tolerância: {profile?.tolerancia || 10}min</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Jornada: {jornadaStr}</span>
           </div>
 
 

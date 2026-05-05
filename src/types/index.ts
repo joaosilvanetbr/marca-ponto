@@ -14,8 +14,7 @@ export interface Registro {
 export interface Profile {
   id: string;
   jornada: string;
-  tolerancia: number;
-  saldo_inicial: number;
+  dias_trabalho?: number[];
   dark_mode: boolean;
   updated_at?: string;
 }

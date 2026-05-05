@@ -5,7 +5,7 @@ import { getFeriadosNacionais, type FeriadoInfo } from '@/lib/feriados';
 import { useCalendario } from '@/hooks/useCalendario';
 import { motion } from 'framer-motion';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays, Download, Filter, PartyPopper, Umbrella, HeartPulse, Briefcase } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, Clock, CalendarDays, Download, Filter, PartyPopper, Umbrella, HeartPulse, Briefcase, Scale, TrendingUp } from 'lucide-react';
 
 type Filtro = 'todos' | 'com_registro' | 'sem_registro';
 
@@ -20,10 +20,11 @@ interface BankHistoryProps {
 export default function BankHistory({ registros, profile, userId, onEdit, onDelete }: BankHistoryProps) {
   const [mesSelecionado, setMesSelecionado] = useState(mesAtual());
   const [deletando, setDeletando] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [filtro, setFiltro] = useState<Filtro>('com_registro');
 
   const jornadaMin = profile ? paraMinutos(profile.jornada) : 480;
-  const tolerancia = profile?.tolerancia || 10;
+  const diasTrabalho = profile?.dias_trabalho || [1, 2, 3, 4, 5];
+
 
   const registrosMap = useMemo(() => {
     const map = new Map<string, Registro>();
@@ -60,31 +61,31 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
       const isHoje = dia === new Date().toISOString().split('T')[0];
       const diaSemana = new Date(dia + 'T12:00:00').getDay();
       const isFuturo = dia > new Date().toISOString().split('T')[0];
-      const isFimDeSemana = diaSemana === 0 || diaSemana === 6;
+      const isDiaDeTrabalho = diasTrabalho.includes(diaSemana);
 
       if (reg) {
         const trab = calcularMinutosTrabalhados(reg.entrada, reg.intervalo, reg.retorno, reg.saida);
-        const saldo = calcularSaldoDia(trab, jornadaMin, tolerancia);
+        const saldo = calcularSaldoDia(trab, jornadaMin);
         totalTrabalhado += trab;
         saldoMes += saldo;
         diasComRegistro++;
-        items.push({ data: dia, reg, cal: cal ?? null, feriado: feriado ?? null, trab, saldo, isHoje, isFuturo, isFimDeSemana, status: 'completo' as const });
+        items.push({ data: dia, reg, cal: cal ?? null, feriado: feriado ?? null, trab, saldo, isHoje, isFuturo, isFimDeSemana: !isDiaDeTrabalho, status: 'completo' as const });
       } else if (cal && !isFuturo) {
         // Dia especial manual (folga, licenca, atestado, feriado customizado) — sem desconto de jornada
-        items.push({ data: dia, reg: null, cal, feriado: feriado ?? null, trab: 0, saldo: 0, isHoje, isFuturo, isFimDeSemana, status: 'especial' as const });
-      } else if (feriado && !isFuturo) {
-        // Feriado nacional automático — sem desconto de jornada
-        items.push({ data: dia, reg: null, cal: null, feriado, trab: 0, saldo: 0, isHoje, isFuturo, isFimDeSemana, status: 'especial' as const });
-      } else if (!isFuturo && !isFimDeSemana) {
+        items.push({ data: dia, reg: null, cal, feriado: feriado ?? null, trab: 0, saldo: 0, isHoje, isFuturo, isFimDeSemana: !isDiaDeTrabalho, status: 'especial' as const });
+      } else if (!isFuturo && isDiaDeTrabalho) {
         saldoMes -= jornadaMin;
         diasSemRegistro++;
-        items.push({ data: dia, reg: null, cal: null, feriado: null, trab: 0, saldo: -jornadaMin, isHoje, isFuturo, isFimDeSemana, status: 'faltante' as const });
+        items.push({ data: dia, reg: null, cal: null, feriado: feriado ?? null, trab: 0, saldo: -jornadaMin, isHoje, isFuturo, isFimDeSemana: false, status: 'faltante' as const });
+      } else if (!isDiaDeTrabalho) {
+        // Folga natural da escala (ex: final de semana na configuração padrão)
+        items.push({ data: dia, reg: null, cal: null, feriado: feriado ?? null, trab: 0, saldo: 0, isHoje, isFuturo, isFimDeSemana: true, status: 'especial' as const });
       }
     }
 
-    const saldoAcumulado = (profile?.saldo_inicial || 0) + saldoMes;
+    const saldoAcumulado = saldoMes;
     return { items, totalTrabalhado, saldoMes, saldoAcumulado, diasComRegistro, diasSemRegistro };
-  }, [dias, registrosMap, calendarioMap, feriadosMap, jornadaMin, tolerancia, profile?.saldo_inicial]);
+  }, [dias, registrosMap, calendarioMap, feriadosMap, jornadaMin, diasTrabalho]);
 
   const itemsFiltrados = useMemo(() => {
     if (filtro === 'com_registro') return dados.items.filter(i => i.reg !== null);
@@ -122,10 +123,7 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
     linhas.push('RESUMO,,,,,,,');
     linhas.push(`Horas Trabalhadas,,,,,,,${paraHora(dados.totalTrabalhado)}`);
     linhas.push(`Saldo do mês,,,,,,,${dados.saldoMes >= 0 ? '+' : ''}${paraHora(dados.saldoMes)}`);
-    if (profile && profile.saldo_inicial !== 0) {
-      linhas.push(`Saldo inicial,,,,,,,${profile.saldo_inicial >= 0 ? '+' : ''}${paraHora(profile.saldo_inicial)}`);
-      linhas.push(`Saldo acumulado,,,,,,,${dados.saldoAcumulado >= 0 ? '+' : ''}${paraHora(dados.saldoAcumulado)}`);
-    }
+
     linhas.push(`Dias trabalhados,,,,,,,${dados.diasComRegistro}`);
     linhas.push(`Dias sem registro,,,,,,,${dados.diasSemRegistro}`);
     const blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -142,14 +140,14 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
       {/* Header do mês */}
       <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="ios-card rounded-2xl p-4 shadow-xl">
         <div className="flex items-center justify-between">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(-1)} className="p-3 -ml-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </motion.button>
           <div className="flex items-center gap-2 text-slate-800 dark:text-white font-semibold">
             <CalendarDays className="w-5 h-5 text-cyan-500" />
             {formatarMesAno(mesSelecionado + '-01')}
           </div>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => mudarMes(1)} className="p-3 -mr-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
           </motion.button>
         </div>
@@ -158,40 +156,36 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
       {/* Resumo do mês */}
       <motion.div whileHover={{ scale: 1.01 }} transition={{ type: 'spring', stiffness: 300 }} className="ios-card rounded-2xl p-5 shadow-xl">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Horas Trabalhadas</div>
-            <div className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">{paraHora(dados.totalTrabalhado)}</div>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 flex flex-col items-center justify-center text-center">
+            <Clock className="w-4 h-4 text-cyan-500 mb-1" />
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Trabalhado</div>
+            <div className="text-xl font-bold text-slate-800 dark:text-white mt-0.5 tabular-nums">{paraHora(dados.totalTrabalhado)}</div>
           </div>
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Saldo do mês</div>
-            <div className={`text-xl font-bold mt-1 tabular-nums ${dados.saldoMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 p-3 flex flex-col items-center justify-center text-center relative overflow-hidden">
+            <Scale className="w-4 h-4 text-emerald-500 mb-1 relative z-10" />
+            <div className="text-[10px] text-emerald-600 dark:text-emerald-500 uppercase tracking-wider font-semibold relative z-10">Saldo do mês</div>
+            <div className={`text-xl font-bold mt-0.5 tabular-nums relative z-10 ${dados.saldoMes >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {dados.saldoMes >= 0 ? '+' : ''}{paraHora(dados.saldoMes)}
             </div>
+            <div className="absolute -right-4 -bottom-4 opacity-5">
+              <Scale className="w-24 h-24 text-emerald-500" />
+            </div>
           </div>
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Dias Trabalhados</div>
-            <div className="text-xl font-bold text-slate-800 dark:text-white mt-1">{dados.diasComRegistro}</div>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 flex flex-col items-center justify-center text-center">
+            <CalendarDays className="w-4 h-4 text-violet-500 mb-1" />
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Dias Trabalhados</div>
+            <div className="text-xl font-bold text-slate-800 dark:text-white mt-0.5">{dados.diasComRegistro}</div>
           </div>
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Média / dia</div>
-            <div className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3 flex flex-col items-center justify-center text-center">
+            <TrendingUp className="w-4 h-4 text-amber-500 mb-1" />
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Média / dia</div>
+            <div className="text-xl font-bold text-slate-800 dark:text-white mt-0.5 tabular-nums">
               {dados.diasComRegistro > 0 ? paraHora(Math.round(dados.totalTrabalhado / dados.diasComRegistro)) : '—'}
             </div>
           </div>
         </div>
 
-        {/* Saldo acumulado */}
-        {profile && profile.saldo_inicial !== 0 && (
-          <div className="mt-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900 p-3 text-center">
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-semibold">Saldo acumulado</div>
-            <div className={`text-xl font-bold mt-1 tabular-nums ${dados.saldoAcumulado >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-              {dados.saldoAcumulado >= 0 ? '+' : ''}{paraHora(dados.saldoAcumulado)}
-            </div>
-            <div className="text-[10px] text-emerald-500/70 dark:text-emerald-500/50 mt-0.5">
-              Inicial: {profile.saldo_inicial >= 0 ? '+' : ''}{paraHora(profile.saldo_inicial)} + Mês: {dados.saldoMes >= 0 ? '+' : ''}{paraHora(dados.saldoMes)}
-            </div>
-          </div>
-        )}
+
       </motion.div>
 
       {/* Filtro + Export */}
@@ -206,10 +200,10 @@ export default function BankHistory({ registros, profile, userId, onEdit, onDele
             <button
               key={f.key}
               onClick={() => setFiltro(f.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${
                 filtro === f.key
-                  ? 'bg-cyan-500 text-white'
-                  : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/20'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               {f.label}
@@ -325,11 +319,11 @@ function VirtualDiaList({ items, onEdit, onDelete, deletando }: VirtualDiaListPr
                 initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-center gap-3 p-3 rounded-2xl transition-all h-full ${
-                  isHoje ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200 dark:border-cyan-800' :
-                  temRegistro ? 'bg-slate-50 dark:bg-slate-800' :
-                  item.status === 'especial' ? 'bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900' :
-                  'bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900'
+                className={`flex items-center gap-3 p-3 rounded-2xl transition-all h-full hover:shadow-md ${
+                  isHoje ? 'bg-cyan-50 dark:bg-cyan-950 border border-cyan-200 dark:border-cyan-800 hover:border-cyan-300 dark:hover:border-cyan-700' :
+                  temRegistro ? 'bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700' :
+                  item.status === 'especial' ? 'bg-violet-50 dark:bg-violet-950/30 border border-violet-100 dark:border-violet-900 hover:border-violet-200 dark:hover:border-violet-800' :
+                  'bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 hover:border-amber-200 dark:hover:border-amber-800'
                 }`}
               >
                 <div className="text-center min-w-[3rem]">
@@ -382,7 +376,7 @@ function VirtualDiaList({ items, onEdit, onDelete, deletando }: VirtualDiaListPr
                         )}
                       </div>
                       {item.reg?.observacao && (
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate italic">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate italic mt-1">
                           “{item.reg.observacao}”
                         </div>
                       )}
@@ -399,18 +393,26 @@ function VirtualDiaList({ items, onEdit, onDelete, deletando }: VirtualDiaListPr
                           ? item.cal.tipo === 'feriado' ? 'Feriado' : item.cal.tipo === 'folga' ? 'Folga' : item.cal.tipo === 'licenca' ? 'Licença' : 'Atestado'
                           : item.feriado
                           ? `Feriado — ${item.feriado.nome}`
-                          : 'Dia especial'}
+                          : 'Folga (Fim de escala)'}
                       </span>
                     </div>
                   ) : (
                     <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">Dia sem registro</span>
                   )}
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">{paraHora(item.trab)}</span>
-                    <span className={`text-[10px] font-semibold tabular-nums ${item.saldo >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {item.saldo >= 0 ? '+' : ''}{paraHora(item.saldo)}
-                    </span>
-                  </div>
+                </div>
+                
+                {/* Saldo / Horas (Alinhados à direita) */}
+                <div className="flex flex-col items-end gap-0.5 shrink-0 pl-3 border-l border-slate-200 dark:border-slate-700/50">
+                  {temRegistro ? (
+                    <>
+                      <span className={`text-xs font-bold tabular-nums ${item.saldo >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                        {item.saldo >= 0 ? '+' : ''}{paraHora(item.saldo)}
+                      </span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500 tabular-nums font-medium">{paraHora(item.trab)}</span>
+                    </>
+                  ) : item.status === 'faltante' ? (
+                    <span className="text-xs font-bold text-rose-500 dark:text-rose-400 tabular-nums">{paraHora(item.saldo)}</span>
+                  ) : null}
                 </div>
                 {temRegistro && (
                   <div className="flex items-center gap-1">

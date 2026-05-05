@@ -115,12 +115,9 @@ export function calcularMinutosTrabalhados(
  */
 export function calcularSaldoDia(
   minutosTrabalhados: number,
-  jornadaMinutos: number,
-  toleranciaMinutos: number
+  jornadaMinutos: number
 ): number {
-  const diferenca = minutosTrabalhados - jornadaMinutos;
-  if (Math.abs(diferenca) <= toleranciaMinutos) return 0;
-  return diferenca;
+  return minutosTrabalhados - jornadaMinutos;
 }
 
 
