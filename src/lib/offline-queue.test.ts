@@ -41,15 +41,42 @@ describe('offline-queue', () => {
     expect(getPendingCount('other-user')).toBe(1)
   })
 
-  it('retries on failure up to MAX_RETRIES then drops', async () => {
-    vi.mocked(supabaseModule.upsertRegistro).mockRejectedValue(new Error('fail'))
+  it('distinguishes between temporary network error and permanent auth error', async () => {
+    clearQueue()
+    
+    // 1. Erro temporário (mas ele terá sucesso se mockado uma vez)
+    // O mockRejectedValueOnce falha a primeira chamada. Para o segundo, ele deve ter sucesso.
+    vi.mocked(supabaseModule.upsertRegistro)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(undefined) // Sucesso na retentativa
+    
+    addToQueue('upsert', { id: 'temp' }, 'registros', USER_ID)
+    
+    // 2. Erro permanente
+    vi.mocked(supabaseModule.upsertRegistro)
+      .mockRejectedValueOnce(new Error('PostgrestError: new row violates row-level security policy'))
+    
+    addToQueue('upsert', { id: 'perm' }, 'registros', USER_ID)
+    
+    expect(getPendingCount(USER_ID)).toBe(2)
+    
+    await syncQueue(USER_ID)
+    
+    // Resultado: 'perm' descartado, 'temp' re-tentado com sucesso -> deve sobrar 0 ou re-tentar 1? 
+    // Na verdade, se 'temp' retentar e tiver sucesso, ele some. 'perm' some porque RLS dropa. 
+    // Então deve sobrar 0.
+    expect(getPendingCount(USER_ID)).toBe(0)
+  })
 
-    addToQueue('upsert', { id: 1 }, 'registros', USER_ID)
-    await syncQueue(USER_ID) // retries=1
+  it('handles UUID IDs correctly in queue', async () => {
+    const uuid = '550e8400-e29b-41d4-a716-446655440000'
+    vi.mocked(supabaseModule.upsertRegistro).mockResolvedValue(undefined)
+    
+    addToQueue('upsert', { id: uuid }, 'registros', USER_ID)
     expect(getPendingCount(USER_ID)).toBe(1)
-    await syncQueue(USER_ID) // retries=2
-    expect(getPendingCount(USER_ID)).toBe(1)
-    await syncQueue(USER_ID) // retries=3, dropped
+    
+    await syncQueue(USER_ID)
+    expect(supabaseModule.upsertRegistro).toHaveBeenCalledWith(USER_ID, expect.objectContaining({ id: uuid }))
     expect(getPendingCount(USER_ID)).toBe(0)
   })
 

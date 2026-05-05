@@ -113,6 +113,7 @@ export async function syncQueue(userId: string): Promise<{ success: number; fail
   const remaining: QueueItem[] = [];
 
   for (const item of queue) {
+    console.log('Fila: processando item', item.id, 'retries:', item.retries);
     // Seguranca: descarta itens de outros usuarios (ex: localStorage manipulado)
     if (item.userId && item.userId !== userId) {
       failed++;
@@ -132,19 +133,30 @@ export async function syncQueue(userId: string): Promise<{ success: number; fail
         if (item.type === 'upsert') {
           await upsertRegistro(userId, item.payload as Registro);
         } else if (item.type === 'update') {
-          const { id, ...updates } = item.payload as { id: number } & Partial<Registro>;
+          const { id, ...updates } = item.payload as { id: string } & Partial<Registro>;
           await updateRegistro(userId, id, updates);
         } else if (item.type === 'delete') {
-          await deleteRegistro(userId, item.payload as number);
+          await deleteRegistro(userId, item.payload as string);
         }
       }
       success++;
-    } catch {
-      item.retries++;
-      if (item.retries < MAX_RETRIES) {
-        remaining.push(item);
-      } else {
+    } catch (error: any) {
+      const errorMessage = error.message?.toLowerCase() || '';
+      console.log('DEBUG: Erro detectado no sync:', errorMessage);
+      const isPermanent = errorMessage.includes('rls') || 
+                          errorMessage.includes('permission') || 
+                          errorMessage.includes('403');
+
+      if (isPermanent) {
+        console.log('Fila: Erro permanente, descartando item', item.id);
         failed++;
+      } else {
+        item.retries++;
+        if (item.retries < MAX_RETRIES) {
+          remaining.push(item);
+        } else {
+          failed++;
+        }
       }
     }
   }
