@@ -101,7 +101,10 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
   const proximo = proximoTipo();
 
   return (
-    <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }} className="space-y-4 pb-24">
+    <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }} className="space-y-4 pb-24 relative">
+      {/* Aura de Fundo */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[300px] bg-gradient-to-b from-primary-start/20 via-primary-end/10 to-transparent blur-3xl -z-10 pointer-events-none rounded-full" />
+      
       {/* Relógio + Previsão */}
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
         <div className="ios-card rounded-2xl p-6 text-center shadow-xl">
@@ -116,9 +119,14 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
           <AnimatePresence mode="wait">
             {(function () {
               const msg = mensagemPrevisao(registro?.entrada || null, registro?.saida || null, registro?.intervalo || null, registro?.retorno || null, profile?.jornada || '08:00');
-              const cores = { info: 'bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300', warning: 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300', success: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300', neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400' };
+              const cores = { 
+                info: 'bg-info/10 text-info border border-info/20', 
+                warning: 'bg-warning/10 text-warning border border-warning/20', 
+                success: 'bg-success/10 text-success border border-success/20', 
+                neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-transparent' 
+              };
               return (
-                <motion.div key={msg.texto} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className={`mt-4 text-sm font-medium rounded-xl px-4 py-2.5 ${cores[msg.tipo]}`}>
+                <motion.div key={msg.texto} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className={`mt-4 text-sm font-medium rounded-xl px-4 py-3 ${cores[msg.tipo]}`}>
                   {msg.texto}
                 </motion.div>
               );
@@ -126,14 +134,14 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
           </AnimatePresence>
 
           {!isOnline && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 flex items-center justify-center gap-1.5 text-amber-500 text-sm">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 flex items-center justify-center gap-1.5 text-warning text-sm font-medium">
               <WifiOff className="w-4 h-4" />
               <span>Modo offline — {pendingCount} pendente{pendingCount !== 1 ? 's' : ''}</span>
             </motion.div>
           )}
 
           {isHojeFeriado && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex items-center justify-center gap-1.5 text-rose-500 text-sm font-medium">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex items-center justify-center gap-1.5 text-destructive text-sm font-medium">
               <PartyPopper className="w-4 h-4" />
               <span>Hoje é feriado nacional — {feriadoHoje!.nome}</span>
             </motion.div>
@@ -157,7 +165,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 onClick={() => handleClick(proximo)}
                 disabled={!!carregando}
-                className="w-full py-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold text-lg shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all flex items-center justify-center gap-3 disabled:opacity-70"
+                className="w-full py-5 rounded-2xl bg-gradient-to-r from-primary-start to-primary-end text-white font-bold text-lg shadow-xl shadow-primary/30 hover:shadow-primary/50 transition-all flex items-center justify-center gap-3 disabled:opacity-70"
               >
                 {carregando === proximo ? (
                   <Loader2 className="w-6 h-6 animate-spin" />
@@ -221,22 +229,22 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
           {/* Resumo */}
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
-              <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Trabalhado</div>
-              <motion.div key={minutosTrabalhados} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className="text-xl font-bold text-slate-800 dark:text-white mt-1 tabular-nums">
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-secondary/50 dark:bg-secondary/20 p-4 text-center border border-border/50">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Trabalhado</div>
+              <motion.div key={minutosTrabalhados} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className="text-xl font-bold text-foreground mt-1 tabular-nums tracking-tight">
                 {paraHora(minutosTrabalhados)}
               </motion.div>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4 text-center">
-              <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Saldo</div>
-              <motion.div key={saldo} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className={`text-xl font-bold mt-1 tabular-nums ${saldo >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="rounded-2xl bg-secondary/50 dark:bg-secondary/20 p-4 text-center border border-border/50">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Saldo</div>
+              <motion.div key={saldo} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 15 }} className={`text-xl font-bold mt-1 tabular-nums tracking-tight ${saldo >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {saldo >= 0 ? '+' : ''}{paraHora(saldo)}
               </motion.div>
             </motion.div>
           </div>
 
           <div className="mt-3 text-center">
-            <span className="text-xs text-slate-400 dark:text-slate-500">Jornada: {jornadaStr}</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Meta Diária: {jornadaStr}</span>
           </div>
 
 
@@ -245,9 +253,12 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
 
       {/* Timeline */}
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
-        <div className="ios-card rounded-2xl p-6 shadow-xl">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Timeline do dia</h3>
-          <div className="space-y-3">
+        <div className="ios-card rounded-2xl p-6 shadow-xl relative">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6 relative z-10">Timeline da Jornada</h3>
+          <div className="space-y-6 relative z-10">
+            {/* Conector Vertical da Timeline */}
+            <div className="absolute top-4 bottom-8 left-[1.15rem] w-0.5 bg-gradient-to-b from-slate-200 to-transparent dark:from-slate-700 -z-10" />
+
             {timeline.map((item, i) => {
               const Icon = item.icon;
               const isDone = !!item.time;

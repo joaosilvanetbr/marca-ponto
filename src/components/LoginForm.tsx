@@ -105,101 +105,116 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   return (
     <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="min-h-screen flex items-center justify-center p-4">
       <motion.div whileHover={{ scale: 1.01 }} transition={{ type: "spring", stiffness: 300 }} className="w-full max-w-sm ios-card rounded-2xl p-8 shadow-2xl">
-        <div className="text-center mb-8">
-          <img src="./icon-192.png" alt="PontoGO" className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg" />
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{titulo}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitulo}</p>
+        <div className="text-center mb-10">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+            <img src="./icon-192.png" alt="PontoGO" className="w-24 h-24 rounded-[2rem] mx-auto relative z-10 shadow-2xl" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">{titulo}</h1>
+          <p className="text-sm text-muted-foreground mt-2 font-medium">{subtitulo}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Email</label>
+            <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 ml-1">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
+              className="w-full px-4 py-4 rounded-2xl bg-secondary/50 dark:bg-secondary/20 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground placeholder:text-muted-foreground/50 transition-all"
               placeholder="seu@email.com"
             />
           </div>
 
           {modo !== 'recuperar' && (
             <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Senha</label>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 ml-1">Senha</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
+                className="w-full px-4 py-4 rounded-2xl bg-secondary/50 dark:bg-secondary/20 border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground placeholder:text-muted-foreground/50 transition-all"
                 placeholder="••••••••"
               />
               {modo === 'cadastro' && (
-                <div className="mt-2 text-xs text-slate-400 dark:text-slate-500 space-y-0.5">
-                  <p className={password.length >= 8 ? 'text-emerald-500' : ''}>• Mínimo 8 caracteres</p>
-                  <p className={/[a-z]/.test(password) ? 'text-emerald-500' : ''}>• Pelo menos uma letra minúscula</p>
-                  <p className={/[A-Z]/.test(password) ? 'text-emerald-500' : ''}>• Pelo menos uma letra maiúscula</p>
-                  <p className={/[0-9]/.test(password) ? 'text-emerald-500' : ''}>• Pelo menos um número</p>
+                <div className="mt-3 p-3 rounded-xl bg-secondary/30 border border-border/30 space-y-1">
+                  <p className={`text-[10px] font-bold flex items-center gap-1.5 ${password.length >= 8 ? 'text-success' : 'text-muted-foreground/60'}`}>
+                    <div className={`w-1 h-1 rounded-full ${password.length >= 8 ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    MÍNIMO 8 CARACTERES
+                  </p>
+                  <p className={`text-[10px] font-bold flex items-center gap-1.5 ${/[a-z]/.test(password) ? 'text-success' : 'text-muted-foreground/60'}`}>
+                    <div className={`w-1 h-1 rounded-full ${/[a-z]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    UMA LETRA MINÚSCULA
+                  </p>
+                  <p className={`text-[10px] font-bold flex items-center gap-1.5 ${/[A-Z]/.test(password) ? 'text-success' : 'text-muted-foreground/60'}`}>
+                    <div className={`w-1 h-1 rounded-full ${/[A-Z]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    UMA LETRA MAIÚSCULA
+                  </p>
+                  <p className={`text-[10px] font-bold flex items-center gap-1.5 ${/[0-9]/.test(password) ? 'text-success' : 'text-muted-foreground/60'}`}>
+                    <div className={`w-1 h-1 rounded-full ${/[0-9]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    PELO MENOS UM NÚMERO
+                  </p>
                 </div>
               )}
             </div>
           )}
 
           {erro && (
-            <div className="text-sm text-red-500 bg-red-100 dark:bg-red-950 rounded-lg p-3 flex items-center gap-2">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-xs font-bold text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center gap-2.5">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               {erro}
-            </div>
+            </motion.div>
           )}
 
           {sucesso && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 rounded-lg p-3">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2.5 text-xs font-bold text-success bg-success/10 border border-success/20 rounded-xl p-4">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               {sucesso}
             </motion.div>
           )}
 
           <motion.button
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.97 }}
             type="submit"
             disabled={carregando}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary-start to-primary-end text-white font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all flex items-center justify-center gap-2.5 disabled:opacity-60"
           >
             {carregando ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : modo === 'login' ? (
-              <><LogIn className="w-5 h-5" /> Entrar</>
+              <><LogIn className="w-5 h-5" /> ENTRAR</>
             ) : modo === 'cadastro' ? (
-              <><UserPlus className="w-5 h-5" /> Cadastrar</>
+              <><UserPlus className="w-5 h-5" /> CADASTRAR</>
             ) : (
-              <><KeyRound className="w-5 h-5" /> Enviar email de recuperação</>
+              <><KeyRound className="w-5 h-5" /> ENVIAR EMAIL</>
             )}
           </motion.button>
         </form>
 
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-8 text-center space-y-3">
           {modo === 'recuperar' ? (
             <button
               onClick={() => mudarModo('login')}
-              className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+              className="text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1.5 mx-auto uppercase tracking-widest"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> Voltar para o login
+              <ArrowLeft className="w-3.5 h-3.5" /> VOLTAR PARA O LOGIN
             </button>
           ) : (
             <>
               <button
                 onClick={() => mudarModo(modo === 'login' ? 'cadastro' : 'login')}
-                className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline block mx-auto"
+                className="text-xs font-bold text-primary hover:underline block mx-auto uppercase tracking-widest"
               >
-                {modo === 'login' ? 'Não tem conta? Cadastre-se' : 'Já tem conta? Entre'}
+                {modo === 'login' ? 'NÃO TEM CONTA? CADASTRE-SE' : 'JÁ TEM CONTA? ENTRE'}
               </button>
               {modo === 'login' && (
                 <button
                   onClick={() => mudarModo('recuperar')}
-                  className="text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors block mx-auto"
+                  className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors block mx-auto uppercase tracking-widest"
                 >
-                  Esqueceu a senha?
+                  ESQUECEU A SENHA?
                 </button>
               )}
             </>

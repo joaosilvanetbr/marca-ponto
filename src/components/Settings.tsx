@@ -5,8 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { logError } from '@/lib/error-utils';
 import { validatePasswordStrength } from '@/lib/auth-utils';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida, CalendarDays } from 'lucide-react';
+import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida, CalendarDays, Palette } from 'lucide-react';
 import { useLembreteConfig } from '@/hooks/useLembreteConfig';
+import { useAppTheme, AppTheme } from '@/hooks/useAppTheme';
 
 interface SettingsProps {
   profile: Profile | null;
@@ -21,6 +22,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
   const [diasTrabalho, setDiasTrabalho] = useState<number[]>(profile?.dias_trabalho || [1, 2, 3, 4, 5]);
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
+  const { theme, setTheme } = useAppTheme();
 
   // Conta
   const [nome, setNome] = useState('');
@@ -194,39 +196,39 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
       {/* Minha Conta */}
       <div className="ios-card rounded-2xl p-6 shadow-xl space-y-4">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-          <User className="w-4 h-4" /> Minha Conta
+        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+          <User className="w-3 h-3" /> Minha Conta
         </h3>
 
         {secaoConta === null && (
           <div className="space-y-2">
-            <button onClick={() => setSecaoConta('perfil')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left">
-              <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-900 flex items-center justify-center">
-                <User className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+            <button onClick={() => setSecaoConta('perfil')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 dark:bg-secondary/20 hover:bg-secondary dark:hover:bg-secondary/40 transition-colors text-left border border-border/50">
+              <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-info" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Nome</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">{nome || 'Adicionar nome'}</div>
+                <div className="text-sm font-medium text-foreground">Nome</div>
+                <div className="text-xs text-muted-foreground">{nome || 'Adicionar nome'}</div>
               </div>
             </button>
 
-            <button onClick={() => setSecaoConta('email')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <button onClick={() => setSecaoConta('email')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 dark:bg-secondary/20 hover:bg-secondary dark:hover:bg-secondary/40 transition-colors text-left border border-border/50">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Email</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">{userEmail}</div>
+                <div className="text-sm font-medium text-foreground">Email</div>
+                <div className="text-xs text-muted-foreground">{userEmail}</div>
               </div>
             </button>
 
-            <button onClick={() => setSecaoConta('senha')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-left">
+            <button onClick={() => setSecaoConta('senha')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 dark:bg-secondary/20 hover:bg-secondary dark:hover:bg-secondary/40 transition-colors text-left border border-border/50">
               <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
                 <Lock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Senha</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">••••••••</div>
+                <div className="text-sm font-medium text-foreground">Senha</div>
+                <div className="text-xs text-muted-foreground">••••••••</div>
               </div>
             </button>
           </div>
@@ -309,28 +311,62 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
       {/* Configurações */}
       <div className="ios-card rounded-2xl p-6 shadow-xl space-y-5">
-        <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-          <Bell className="w-4 h-4" /> Configuracoes
+        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+          <Bell className="w-3 h-3" /> Configuracoes
         </h3>
 
         {/* Tema - auto-salva */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center border border-amber-200 dark:border-amber-800">
               {darkMode ? <Moon className="w-5 h-5 text-amber-600 dark:text-amber-400" /> : <Sun className="w-5 h-5 text-amber-600" />}
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Tema escuro</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Salva automaticamente</div>
+              <div className="text-sm font-medium text-foreground">Tema escuro</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Auto-save</div>
             </div>
           </div>
           <button
             onClick={toggleTema}
             disabled={status === 'saving'}
-            className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'} disabled:opacity-50`}
+            className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-primary' : 'bg-secondary dark:bg-slate-700'} border border-border disabled:opacity-50`}
           >
             <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'}`} />
           </button>
+        </div>
+
+        {/* Paleta de Cores */}
+        <div className="pt-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+              <Palette className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-foreground">Paleta de Cores</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Accent Color</div>
+            </div>
+          </div>
+          <div className="flex justify-between bg-secondary/50 dark:bg-secondary/20 p-3 rounded-2xl border border-border/50">
+            {(['ocean', 'amethyst', 'forest', 'sunset'] as AppTheme[]).map((t) => {
+              const cores: Record<AppTheme, string> = {
+                ocean: 'bg-[#0ea5e9]',
+                amethyst: 'bg-[#8b5cf6]',
+                forest: 'bg-[#10b981]',
+                sunset: 'bg-[#f59e0b]'
+              };
+              const ativo = theme === t;
+              return (
+                <motion.button
+                  key={t}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setTheme(t)}
+                  className={`w-12 h-12 rounded-2xl transition-all ${cores[t]} shadow-lg ${ativo ? 'ring-4 ring-primary ring-offset-4 ring-offset-background scale-110 z-10' : 'opacity-40 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 hover:scale-105'}`}
+                >
+                  {ativo && <CheckCircle2 className="w-5 h-5 text-white mx-auto" />}
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Notificações */}

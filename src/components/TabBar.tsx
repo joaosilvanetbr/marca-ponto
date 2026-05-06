@@ -17,8 +17,8 @@ const tabs: { id: Tab; label: string; icon: typeof Clock }[] = [
 export default function TabBar({ active, onChange }: TabBarProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
-      <div className="max-w-md mx-auto px-4 pb-4 pt-2">
-        <div className="ios-card rounded-2xl flex items-center justify-around p-2 shadow-2xl">
+      <div className="max-w-md mx-auto px-6 pb-6 pt-2">
+        <div className="ios-card rounded-3xl flex items-center justify-around p-2.5">
           {tabs.map((tab) => {
             const isActive = active === tab.id;
             const Icon = tab.icon;
@@ -27,21 +27,21 @@ export default function TabBar({ active, onChange }: TabBarProps) {
                 key={tab.id}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(tab.id)}
-                className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
+                className={`relative flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl transition-all ${
                   isActive
                     ? 'text-white'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="tab-active-pill"
-                    className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl shadow-lg shadow-cyan-500/30"
-                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className="absolute inset-0 bg-gradient-to-r from-primary-start to-primary-end rounded-2xl shadow-lg shadow-primary/20"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   />
                 )}
                 <Icon className={`w-5 h-5 relative z-10 ${isActive ? 'text-white' : ''}`} />
-                <span className={`text-[10px] font-medium relative z-10 ${isActive ? 'text-white' : ''}`}>{tab.label}</span>
+                <span className={`text-[10px] font-bold uppercase tracking-widest relative z-10 ${isActive ? 'text-white' : ''}`}>{tab.label}</span>
               </motion.button>
             );
           })}
