@@ -1,28 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
-import type { Profile } from '@/types';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { Profile, LembreteConfig } from '@/types';
 import { updateProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
 import { logError } from '@/lib/error-utils';
 import { validatePasswordStrength } from '@/lib/auth-utils';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida, CalendarDays, Palette } from 'lucide-react';
-import { useLembreteConfig } from '@/hooks/useLembreteConfig';
-import { useAppTheme, AppTheme } from '@/hooks/useAppTheme';
+import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida, CalendarDays } from 'lucide-react';
+import { useAppTheme } from '@/hooks/useAppTheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 interface SettingsProps {
   profile: Profile | null;
   userEmail: string;
   onProfileUpdate: () => Promise<void>;
-  notificacaoAtivada?: boolean;
-  onToggleNotificacao?: () => void;
 }
 
-export default function Settings({ profile, userEmail, onProfileUpdate, notificacaoAtivada = false, onToggleNotificacao }: SettingsProps) {
-  const { config: lembreteConfig, save: saveLembrete } = useLembreteConfig();
+export default function Settings({ profile, userEmail, onProfileUpdate }: SettingsProps) {
+  const { isSubscribed, subscribe, unsubscribe, loading: loadingPush } = usePushNotifications();
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
   const [diasTrabalho, setDiasTrabalho] = useState<number[]>(profile?.dias_trabalho || [1, 2, 3, 4, 5]);
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
-  const { theme, setTheme } = useAppTheme();
+  const [lembreteConfig, setLembreteConfig] = useState<LembreteConfig>(profile?.lembrete_config || {
+    entrada: true, intervalo: true, retorno: true, saida: true
+  });
+
+  useAppTheme();
 
   // Conta
   const [nome, setNome] = useState('');
@@ -35,10 +37,11 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
   const [status, setStatus] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState('');
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
   const profileId = profile?.id;
   const profileJornada = profile?.jornada;
-
   const profileDarkMode = profile?.dark_mode;
+  const profileLembretes = profile?.lembrete_config;
 
   // Busca nome do user_metadata
   useEffect(() => {
@@ -51,12 +54,13 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
   // Sincroniza estados locais quando o profile muda
   useEffect(() => {
-    if (profileId && profileJornada && profileDarkMode !== undefined) {
-      setJornada(profileJornada);
-      setDarkMode(profileDarkMode);
+    if (profileId) {
+      if (profileJornada) setJornada(profileJornada);
+      if (profileDarkMode !== undefined) setDarkMode(profileDarkMode);
       if (profile?.dias_trabalho) setDiasTrabalho(profile.dias_trabalho);
+      if (profileLembretes) setLembreteConfig(profileLembretes);
     }
-  }, [profileId, profileJornada, profileDarkMode, profile?.dias_trabalho]);
+  }, [profileId, profileJornada, profileDarkMode, profile?.dias_trabalho, profileLembretes]);
 
   function showStatus(value: string, msg: string, duration = 3000) {
     setStatus(value);
@@ -65,24 +69,32 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     statusTimer.current = setTimeout(() => setStatus(null), duration);
   }
 
-  async function autoSave(updates: Partial<Profile>) {
-    if (!profile) return;
+  const autoSave = useCallback(async (updates: Partial<Profile>) => {
+    if (!profileId) return;
     setStatus('saving');
     try {
-      await updateProfile(profile.id, updates);
+      await updateProfile(profileId, updates);
       await onProfileUpdate();
       showStatus('saved', 'Salvo!', 2000);
     } catch (err: unknown) {
       logError('Settings.autoSave', err);
       showStatus('error', 'Erro ao salvar', 4000);
     }
-  }
+  }, [profileId, onProfileUpdate]);
 
-  // Debounced auto-save para jornada
+  const saveLembrete = useCallback(async (updates: Partial<LembreteConfig>) => {
+    const next = { ...lembreteConfig, ...updates };
+    setLembreteConfig(next);
+    // Salva local (legado/cache)
+    localStorage.setItem('pontogo-lembretes', JSON.stringify(next));
+    // Salva no banco
+    await autoSave({ lembrete_config: next });
+  }, [lembreteConfig, autoSave]);
+
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function scheduleSave(field: keyof Profile, value: unknown) {
-    if (!profile) return;
+    if (!profileId) return;
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(() => {
       autoSave({ [field]: value });
@@ -105,9 +117,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     scheduleSave('dias_trabalho', novosDias);
   }
 
-
-
-  // Auto-salva o tema imediatamente
   async function toggleTema() {
     const novo = !darkMode;
     setDarkMode(novo);
@@ -116,7 +125,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     await autoSave({ dark_mode: novo });
   }
 
-  // Atualizar nome
   async function handleSalvarNome() {
     setStatus('saving');
     try {
@@ -131,7 +139,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     }
   }
 
-  // Atualizar email
   async function handleSalvarEmail() {
     if (!novoEmail || novoEmail === userEmail) {
       showStatus('error', 'Digite um email diferente do atual', 3000);
@@ -148,7 +155,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
     }
   }
 
-  // Atualizar senha
   async function handleSalvarSenha() {
     const pwdError = validatePasswordStrength(novaSenha);
     if (pwdError) {
@@ -174,7 +180,6 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    // onAuthStateChange em AuthProvider limpa o estado automaticamente
   }
 
   const nomeExibido = nome || userEmail.split('@')[0];
@@ -315,7 +320,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
           <Bell className="w-3 h-3" /> Configuracoes
         </h3>
 
-        {/* Tema - auto-salva */}
+        {/* Tema */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center border border-amber-200 dark:border-amber-800">
@@ -335,60 +340,27 @@ export default function Settings({ profile, userEmail, onProfileUpdate, notifica
           </button>
         </div>
 
-        {/* Paleta de Cores */}
-        <div className="pt-2">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-              <Palette className="w-5 h-5 text-primary" />
+        {/* Notificações Push Reais */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSubscribed ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
+              {isSubscribed ? <Bell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> : <BellOff className="w-5 h-5 text-slate-500 dark:text-slate-400" />}
             </div>
             <div>
-              <div className="text-sm font-medium text-foreground">Paleta de Cores</div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Accent Color</div>
+              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Notificações Push</div>
+              <div className="text-xs text-slate-400 dark:text-slate-500">Alertas reais no dispositivo</div>
             </div>
           </div>
-          <div className="flex justify-between bg-secondary/50 dark:bg-secondary/20 p-3 rounded-2xl border border-border/50">
-            {(['ocean', 'amethyst', 'forest', 'sunset'] as AppTheme[]).map((t) => {
-              const cores: Record<AppTheme, string> = {
-                ocean: 'bg-[#0ea5e9]',
-                amethyst: 'bg-[#8b5cf6]',
-                forest: 'bg-[#10b981]',
-                sunset: 'bg-[#f59e0b]'
-              };
-              const ativo = theme === t;
-              return (
-                <motion.button
-                  key={t}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setTheme(t)}
-                  className={`w-12 h-12 rounded-2xl transition-all ${cores[t]} shadow-lg ${ativo ? 'ring-4 ring-primary ring-offset-4 ring-offset-background scale-110 z-10' : 'opacity-40 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 hover:scale-105'}`}
-                >
-                  {ativo && <CheckCircle2 className="w-5 h-5 text-white mx-auto" />}
-                </motion.button>
-              );
-            })}
-          </div>
+          <button
+            onClick={isSubscribed ? unsubscribe : subscribe}
+            disabled={loadingPush}
+            className={`relative w-12 h-7 rounded-full transition-colors ${isSubscribed ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'} border border-border disabled:opacity-50`}
+          >
+            <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${isSubscribed ? 'translate-x-5' : 'translate-x-0'} flex items-center justify-center`}>
+              {loadingPush && <Loader2 className="w-3 h-3 text-emerald-500 animate-spin" />}
+            </div>
+          </button>
         </div>
-
-        {/* Notificações */}
-        {onToggleNotificacao && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${notificacaoAtivada ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                {notificacaoAtivada ? <Bell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> : <BellOff className="w-5 h-5 text-slate-500 dark:text-slate-400" />}
-              </div>
-              <div>
-                <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Notificações</div>
-                <div className="text-xs text-slate-400 dark:text-slate-500">Lembretes de ponto</div>
-              </div>
-            </div>
-            <button
-              onClick={onToggleNotificacao}
-              className={`relative w-12 h-7 rounded-full transition-colors ${notificacaoAtivada ? 'bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-            >
-              <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${notificacaoAtivada ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
-        )}
 
         {/* Jornada */}
         <div>

@@ -26,8 +26,10 @@ export function useAppMutations() {
     if (!currentUser) return;
 
     const hora = agora();
-    const existing = queryClient.getQueryData<Registro | null>(['registro-do-dia', currentUser]);
-    const base: Registro = existing || {
+    const queryKeyDia = ['registro-do-dia', currentUser];
+    const previousRegistro = queryClient.getQueryData<Registro | null>(queryKeyDia);
+    
+    const base: Registro = previousRegistro || {
       user_id: currentUser,
       data: hoje(),
       entrada: null,
@@ -35,12 +37,27 @@ export function useAppMutations() {
       retorno: null,
       saida: null,
     };
+    
     const novo = { ...base, [tipo]: hora };
+
+    // Atualização Otimista (Instantânea)
+    queryClient.setQueryData(queryKeyDia, novo);
+    // Também atualiza o cache do mês para manter consistência
+    queryClient.setQueryData(['registros-mes', currentUser], (old: Registro[] | undefined) => {
+      if (!old) return [novo];
+      const index = old.findIndex(r => r.data === novo.data);
+      if (index === -1) return [novo, ...old];
+      const copy = [...old];
+      copy[index] = novo;
+      return copy;
+    });
 
     if (isOnline) {
       try {
         await upsertRegistro(currentUser, novo);
-      } catch {
+        toast.success(`Registro de ${tipo} realizado!`);
+      } catch (err) {
+        // Fallback para fila offline se o servidor falhar
         addToQueue('upsert', novo, 'registros', currentUser);
         toast.warning('Falha na sincronização. Registro salvo localmente.', { duration: 4000 });
       }
@@ -49,7 +66,9 @@ export function useAppMutations() {
       toast.warning('Modo offline — registro salvo e será sincronizado ao reconectar.', { duration: 4000 });
     }
 
-    invalidateData();
+    // Não invalidamos imediatamente para não causar "flicker" de loading se o otimismo já resolveu
+    // mas agendamos uma sincronização de fundo
+    setTimeout(() => invalidateData(), 1000);
   }, [user, isOnline, queryClient, invalidateData]);
 
   const handleSync = useCallback(async () => {

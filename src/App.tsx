@@ -51,7 +51,7 @@ function AppContent() {
   const queryClient = useQueryClient();
 
   // Notificações do sistema
-  const { ativado: notifAtivado, toggle: toggleNotif, notificar } = useNotifications();
+  const { ativado: notifAtivado, notificar } = useNotifications();
 
   // Feedback tátil
   const haptic = useHaptic();
@@ -98,7 +98,7 @@ function AppContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
+      <div className="min-h-screen bg-background text-foreground">
         <LoginForm onLogin={() => {}} />
       </div>
     );
@@ -106,7 +106,7 @@ function AppContent() {
 
   if (dadosCarregando) {
     return (
-      <div className="min-h-screen bg-[#F2F2F7] dark:bg-black">
+      <div className="min-h-screen bg-background text-foreground">
         <SkeletonScreen />
         <TabBar active={activeTab} onChange={handleTabChange} />
       </div>
@@ -115,7 +115,7 @@ function AppContent() {
 
   return (
     <div
-      className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-white transition-colors touch-pan-y"
+      className="min-h-screen bg-background text-foreground transition-colors touch-pan-y"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -195,8 +195,6 @@ function AppContent() {
                 onProfileUpdate={async () => {
                   await queryClient.invalidateQueries({ queryKey: ['profile'] });
                 }}
-                notificacaoAtivada={notifAtivado}
-                onToggleNotificacao={toggleNotif}
               />
             </Suspense>
           )}

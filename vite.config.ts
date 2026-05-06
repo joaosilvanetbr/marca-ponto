@@ -22,24 +22,17 @@ export default defineConfig({
     },
   },
   plugins: [react(), VitePWA({
+    strategies: 'injectManifest',
+    srcDir: 'src',
+    filename: 'sw.ts',
     registerType: 'autoUpdate',
     manifest: false,
-    workbox: {
+    injectManifest: {
       globPatterns: ['**/*.{js,css,html,png,svg,json}'],
-      runtimeCaching: [
-        {
-          urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
-          handler: 'NetworkOnly',
-        },
-        {
-          urlPattern: ({ request }) => request.mode === 'navigate',
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'pages',
-            expiration: { maxEntries: 10 },
-          },
-        },
-      ],
+    },
+    devOptions: {
+      enabled: true,
+      type: 'module',
     },
   }), cloudflare()],
   server: {

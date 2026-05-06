@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 
-export type AppTheme = 'ocean' | 'amethyst' | 'forest' | 'sunset';
-
+/**
+ * Hook para gerenciar o tema visual único (Aurora).
+ * Mantido por compatibilidade de interface, mas simplificado para uma identidade única.
+ */
 export function useAppTheme() {
-  const [theme, setTheme] = useState<AppTheme>(() => {
-    return (localStorage.getItem('pontogo-theme') as AppTheme) || 'ocean';
+  const [theme, setTheme] = useState<'aurora'>(() => {
+    return 'aurora';
   });
 
   useEffect(() => {
-    localStorage.setItem('pontogo-theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    localStorage.setItem('pontogo-theme', 'aurora');
+    document.documentElement.setAttribute('data-theme', 'aurora');
+  }, []);
 
   return { theme, setTheme };
 }

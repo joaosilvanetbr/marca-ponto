@@ -17,19 +17,34 @@ interface ClockCardProps {
   onHaptic?: () => void;
 }
 
-export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onSync, pendingCount, isOnline, onHaptic }: ClockCardProps) {
+function DigitalClock() {
   const [horaAtual, setHoraAtual] = useState(agora());
+
+  useEffect(() => {
+    const timer = setInterval(() => setHoraAtual(agora()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <motion.div 
+      className="text-6xl font-bold text-slate-800 dark:text-white tracking-tight tabular-nums" 
+      key={horaAtual} 
+      initial={{ scale: 0.98, opacity: 0.8 }} 
+      animate={{ scale: 1, opacity: 1 }} 
+      transition={{ duration: 0.2 }}
+    >
+      {horaAtual}
+    </motion.div>
+  );
+}
+
+export default function ClockCard({ registro, profile, onRegistrar, onEditar, onRemoverPonto, onSync, pendingCount, isOnline, onHaptic }: ClockCardProps) {
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<'entrada' | 'intervalo' | 'retorno' | 'saida' | null>(null);
   const [horaEditada, setHoraEditada] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [removendo, setRemovendo] = useState<string | null>(null);
   const [ajustando, setAjustando] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => setHoraAtual(agora()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const minutosTrabalhados = calcularMinutosTrabalhados(
     registro?.entrada || null,
@@ -101,7 +116,7 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
   const proximo = proximoTipo();
 
   return (
-    <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }} className="space-y-4 pb-24 relative">
+    <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05 } } }} className="space-y-4 pb-24 relative">
       {/* Aura de Fundo */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[300px] bg-gradient-to-b from-primary-start/20 via-primary-end/10 to-transparent blur-3xl -z-10 pointer-events-none rounded-full" />
       
@@ -112,9 +127,8 @@ export default function ClockCard({ registro, profile, onRegistrar, onEditar, on
             <Clock className="w-4 h-4" />
             <span className="text-sm font-medium">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </motion.div>
-          <motion.div className="text-6xl font-bold text-slate-800 dark:text-white tracking-tight tabular-nums" key={horaAtual} initial={{ scale: 0.95, opacity: 0.5 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.3 }}>
-            {horaAtual}
-          </motion.div>
+          
+          <DigitalClock />
 
           <AnimatePresence mode="wait">
             {(function () {

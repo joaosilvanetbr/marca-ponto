@@ -22,7 +22,7 @@
     --destructive-foreground: 210 40% 98%;
     
     /* Semantic Colors */
-    --success: 142 76% 36%;
+    --success: 160 84% 39%;
     --success-foreground: 355 100% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 355 100% 100%;
@@ -31,7 +31,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 160 84% 39%;
     --radius: 0.75rem;
     
     --sidebar-background: 0 0% 98%;
@@ -41,41 +41,20 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 160 84% 39%;
     
-    /* Default Theme (Ocean) */
-    --primary-main: 199 89% 48%;
-    --primary-start: 199 89% 48%;
-    --primary-end: 217 91% 60%;
-  }
-
-  [data-theme="amethyst"] {
-    --primary-main: 262 83% 58%;
-    --primary-start: 292 84% 61%;
+    /* Global Aurora Identity */
+    --primary-main: 160 84% 39%;
+    --primary-start: 160 100% 45%;
     --primary-end: 262 83% 58%;
-    --background: 270 40% 99%;
-  }
-
-  [data-theme="forest"] {
-    --primary-main: 142 71% 45%;
-    --primary-start: 171 77% 64%;
-    --primary-end: 142 71% 45%;
-    --background: 150 40% 99%;
-  }
-
-  [data-theme="sunset"] {
-    --primary-main: 24 98% 55%;
-    --primary-start: 346 87% 61%;
-    --primary-end: 24 98% 55%;
-    --background: 30 40% 99%;
   }
 
   .dark {
-    --background: 222 47% 4%;
+    --background: 222 84% 2%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 6%;
+    --card: 222 47% 4%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 6%;
+    --popover: 222 47% 4%;
     --popover-foreground: 210 40% 98%;
     --primary: 210 40% 98%;
     --primary-foreground: 222 47% 11%;
@@ -89,22 +68,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
-
-  .dark[data-theme="amethyst"] {
-    --background: 270 50% 3%;
-    --card: 270 50% 5%;
-  }
-
-  .dark[data-theme="forest"] {
-    --background: 150 50% 2%;
-    --card: 150 50% 4%;
-  }
-
-  .dark[data-theme="sunset"] {
-    --background: 30 50% 2%;
-    --card: 30 50% 4%;
+    --ring: 160 84% 39%;
   }
 }
 
@@ -123,14 +87,14 @@
 
 @layer components {
   .ios-card {
-    @apply bg-white/70 dark:bg-slate-900/40 border border-white/20 dark:border-white/5 shadow-xl backdrop-blur-2xl;
+    @apply bg-white/70 dark:bg-emerald-950/20 border border-white/20 dark:border-emerald-500/10 shadow-xl backdrop-blur-2xl;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
   .dark .ios-card {
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
   }
   .glass-panel {
-    @apply bg-white/60 dark:bg-slate-900/50 border border-white/30 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] backdrop-blur-3xl;
+    @apply bg-white/60 dark:bg-emerald-950/30 border border-white/30 dark:border-emerald-500/20 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] backdrop-blur-3xl;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
 }

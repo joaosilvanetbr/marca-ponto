@@ -6,10 +6,10 @@ export function TabSlide({ children, activeTab, direction = 'right' }: { childre
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={activeTab}
-        initial={{ opacity: 0, x: direction === 'right' ? 40 : -40 }}
+        initial={{ opacity: 0, x: direction === 'right' ? 20 : -20 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: direction === 'right' ? -40 : 40 }}
-        transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+        exit={{ opacity: 0, x: direction === 'right' ? -20 : 20 }}
+        transition={{ duration: 0.15, ease: 'easeOut' }}
       >
         {children}
       </motion.div>

@@ -154,3 +154,19 @@ export async function deleteCalendario(userId: string, data: string): Promise<vo
 
   if (error) throw error;
 }
+
+// --- Push Notifications ---
+
+export async function upsertPushSubscription(userId: string, subscription: any): Promise<void> {
+  const { endpoint, keys } = subscription.toJSON();
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .upsert({
+      user_id: userId,
+      endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth
+    }, { onConflict: 'endpoint' });
+
+  if (error) throw error;
+}

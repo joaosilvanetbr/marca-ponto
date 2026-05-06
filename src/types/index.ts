@@ -11,11 +11,19 @@ export interface Registro {
   updated_at?: string;
 }
 
+export interface LembreteConfig {
+  entrada: boolean;
+  intervalo: boolean;
+  retorno: boolean;
+  saida: boolean;
+}
+
 export interface Profile {
   id: string;
   jornada: string;
   dias_trabalho?: number[];
   dark_mode: boolean;
+  lembrete_config?: LembreteConfig;
   updated_at?: string;
 }
 
