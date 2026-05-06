@@ -66,13 +66,34 @@ export function useNotifications() {
     jaNotificados.current.add(chave);
 
     try {
-      new Notification(titulo, {
-        icon: '/pwa-192x192.png',
-        badge: '/pwa-192x192.png',
-        tag: chave,
-        requireInteraction: false,
-        ...options,
-      });
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(titulo, {
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: chave,
+            requireInteraction: false,
+            ...options,
+          });
+        }).catch(() => {
+          // Fallback to traditional API
+          new Notification(titulo, {
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: chave,
+            requireInteraction: false,
+            ...options,
+          });
+        });
+      } else {
+        new Notification(titulo, {
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          tag: chave,
+          requireInteraction: false,
+          ...options,
+        });
+      }
     } catch {
       // Fallback silencioso
     }

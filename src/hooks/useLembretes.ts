@@ -42,8 +42,8 @@ export function useLembretes(
         if (notificar) {
           notificar('PontoGO — Lembrete', {
             body: lembrete,
-            icon: '/pwa-192x192.png',
-            badge: '/pwa-192x192.png',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
           });
         }
 
