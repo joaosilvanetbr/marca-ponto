@@ -157,8 +157,12 @@ export async function deleteCalendario(userId: string, data: string): Promise<vo
 
 // --- Push Notifications ---
 
-export async function upsertPushSubscription(userId: string, subscription: any): Promise<void> {
+export async function upsertPushSubscription(userId: string, subscription: PushSubscription): Promise<void> {
   const { endpoint, keys } = subscription.toJSON();
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    throw new Error('Inscrição push inválida: campos obrigatórios faltando.');
+  }
+
   const { error } = await supabase
     .from('push_subscriptions')
     .upsert({

@@ -56,7 +56,7 @@ export function useAppMutations() {
       try {
         await upsertRegistro(currentUser, novo);
         toast.success(`Registro de ${tipo} realizado!`);
-      } catch (err) {
+      } catch {
         // Fallback para fila offline se o servidor falhar
         addToQueue('upsert', novo, 'registros', currentUser);
         toast.warning('Falha na sincronização. Registro salvo localmente.', { duration: 4000 });

@@ -10,7 +10,7 @@ webpush.setVapidDetails(
   VAPID_PRIVATE_KEY
 );
 
-Deno.serve(async (req) => {
+Deno.serve(async (_req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

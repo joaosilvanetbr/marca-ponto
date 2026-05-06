@@ -55,7 +55,7 @@ export default function CalendarView({ calendario, onMarcar, onRemover }: Calend
     const feriado = feriadosMap.get(data);
     if (feriado) {
       return { 
-        tipo: 'feriado_nacional' as any, 
+        tipo: 'feriado' as DiaCalendario['tipo'], 
         label: feriado.nome, 
         icon: PartyPopper, 
         cor: 'text-rose-400', 
