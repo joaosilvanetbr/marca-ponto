@@ -22,6 +22,7 @@ export interface Profile {
   id: string;
   jornada: string;
   dias_trabalho?: number[];
+  saldo_inicial?: number;
   dark_mode: boolean;
   lembrete_config?: LembreteConfig;
   updated_at?: string;

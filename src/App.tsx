@@ -1,6 +1,7 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense } from 'react';
 import { Toaster } from 'sonner';
 import { AppProvider } from '@/contexts/AppProvider';
+// Hooks
 import { useAuth } from '@/hooks/useAuth';
 import { useApp } from '@/hooks/useApp';
 import { useRegistroDoDia } from '@/hooks/useRegistroDoDia';
@@ -10,11 +11,11 @@ import { useCalendario } from '@/hooks/useCalendario';
 import { useAppMutations } from '@/hooks/useAppMutations';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useHaptic } from '@/hooks/useHaptic';
-import { useAppBadge } from '@/hooks/useAppBadge';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLembretes } from '@/hooks/useLembretes';
 import { useLembreteConfig } from '@/hooks/useLembreteConfig';
+import { useOfflineSyncStatus } from '@/hooks/useOfflineSyncStatus';
 import { useQueryClient } from '@tanstack/react-query';
+
 import { mesAtual } from '@/lib/time-utils';
 import LoginForm from '@/components/LoginForm';
 import ResetPassword from '@/components/ResetPassword';
@@ -29,13 +30,17 @@ const BankHistory = lazy(() => import('@/components/BankHistory'));
 const CalendarView = lazy(() => import('@/components/CalendarView'));
 const Settings = lazy(() => import('@/components/Settings'));
 
+import { useAppInitialization } from '@/hooks/useAppInitialization';
+
 function AppContent() {
   const { user, userEmail, carregando: authLoading } = useAuth();
   const {
-    activeTab, tabDirection, isOnline, pendingCount, syncing,
+    activeTab, tabDirection,
     editando, lancamentoAberto, setEditando, setLancamentoAberto,
     handleTabChange, onTouchStart, onTouchEnd,
   } = useApp();
+
+  const { isOnline, pendingCount, syncing } = useOfflineSyncStatus();
 
   const { data: registroHoje, isLoading: loadingRegistro } = useRegistroDoDia(user);
   const { data: registrosMes = [], isLoading: loadingRegistros } = useRegistrosMes(user);
@@ -49,20 +54,18 @@ function AppContent() {
   } = useAppMutations();
 
   const queryClient = useQueryClient();
-
-  // Notificações do sistema
   const { ativado: notifAtivado, notificar } = useNotifications();
-
-  // Feedback tátil
   const haptic = useHaptic();
-
-  // App Badge
-  const { setBadge, clearBadge } = useAppBadge();
-
-  // Theme color dinâmico
-  useThemeColor(profile?.dark_mode || false);
-
   const { config: lembreteConfig } = useLembreteConfig();
+
+  // Inicialização de efeitos (Badge, Sync, Theme)
+  useAppInitialization({
+    isOnline,
+    pendingCount,
+    syncing,
+    handleSync,
+    darkMode: profile?.dark_mode || false,
+  });
 
   // Lembretes/notificações
   useLembretes(
@@ -74,25 +77,6 @@ function AppContent() {
     lembreteConfig,
     notifAtivado ? notificar : undefined
   );
-
-  // Atualiza badge quando mudam os pendentes
-  useEffect(() => {
-    if (pendingCount > 0) {
-      setBadge(pendingCount);
-    } else {
-      clearBadge();
-    }
-  }, [pendingCount, setBadge, clearBadge]);
-
-  // Auto-sync quando volta online
-  const handleSyncRef = useRef(handleSync);
-  useEffect(() => { handleSyncRef.current = handleSync; }, [handleSync]);
-
-  useEffect(() => {
-    if (isOnline && pendingCount > 0 && !syncing) {
-      handleSyncRef.current();
-    }
-  }, [isOnline, pendingCount, syncing]);
 
   const dadosCarregando = authLoading || loadingRegistro || loadingProfile;
 

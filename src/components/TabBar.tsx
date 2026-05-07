@@ -18,13 +18,16 @@ export default function TabBar({ active, onChange }: TabBarProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
       <div className="max-w-md mx-auto px-6 pb-6 pt-2">
-        <div className="ios-card rounded-3xl flex items-center justify-around p-2.5">
+        <div role="tablist" className="ios-card rounded-3xl flex items-center justify-around p-2.5">
           {tabs.map((tab) => {
             const isActive = active === tab.id;
             const Icon = tab.icon;
             return (
               <motion.button
                 key={tab.id}
+                role="tab"
+                aria-selected={isActive}
+                aria-label={tab.label}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => onChange(tab.id)}
                 className={`relative flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl transition-all ${

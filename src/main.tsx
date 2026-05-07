@@ -16,9 +16,6 @@ if ('serviceWorker' in navigator) {
           location.reload();
         }
       },
-      onOfflineReady() {
-        console.log('App pronto para uso offline');
-      },
     });
   }).catch(() => {
     // Fallback silencioso se o virtual module não estiver disponível

@@ -5,9 +5,19 @@ import { supabase } from '@/lib/supabase';
 import { logError } from '@/lib/error-utils';
 import { validatePasswordStrength } from '@/lib/auth-utils';
 import { motion } from 'framer-motion';
-import { Sun, Moon, Loader2, LogOut, Briefcase, Bell, BellOff, CheckCircle2, User, Mail, Lock, ArrowLeft, LogIn, Coffee, Play, LogOut as IconSaida, CalendarDays } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { paraHora, paraMinutos } from '@/lib/time-utils';
+
+// Subcomponentes
+import { AccountSettings } from './settings/AccountSettings';
+import { WorkScheduleSettings } from './settings/WorkScheduleSettings';
+import { BalanceSettings } from './settings/BalanceSettings';
+import { NotificationSettings } from './settings/NotificationSettings';
+import { ThemeSettings } from './settings/ThemeSettings';
+import { AccountActions } from './settings/AccountActions';
 
 interface SettingsProps {
   profile: Profile | null;
@@ -19,6 +29,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
   const { isSubscribed, subscribe, unsubscribe, loading: loadingPush } = usePushNotifications();
   const [jornada, setJornada] = useState(profile?.jornada || '08:00');
   const [diasTrabalho, setDiasTrabalho] = useState<number[]>(profile?.dias_trabalho || [1, 2, 3, 4, 5]);
+  const [saldoInicial, setSaldoInicial] = useState(paraHora(profile?.saldo_inicial || 0));
   const [darkMode, setDarkMode] = useState(profile?.dark_mode || false);
   const [lembreteConfig, setLembreteConfig] = useState<LembreteConfig>(profile?.lembrete_config || {
     entrada: true, intervalo: true, retorno: true, saida: true
@@ -59,8 +70,9 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
       if (profileDarkMode !== undefined) setDarkMode(profileDarkMode);
       if (profile?.dias_trabalho) setDiasTrabalho(profile.dias_trabalho);
       if (profileLembretes) setLembreteConfig(profileLembretes);
+      if (profile?.saldo_inicial !== undefined) setSaldoInicial(paraHora(profile.saldo_inicial));
     }
-  }, [profileId, profileJornada, profileDarkMode, profile?.dias_trabalho, profileLembretes]);
+  }, [profileId, profileJornada, profileDarkMode, profile?.dias_trabalho, profileLembretes, profile?.saldo_inicial]);
 
   function showStatus(value: string, msg: string, duration = 3000) {
     setStatus(value);
@@ -85,9 +97,7 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
   const saveLembrete = useCallback(async (updates: Partial<LembreteConfig>) => {
     const next = { ...lembreteConfig, ...updates };
     setLembreteConfig(next);
-    // Salva local (legado/cache)
     localStorage.setItem('pontogo-lembretes', JSON.stringify(next));
-    // Salva no banco
     await autoSave({ lembrete_config: next });
   }, [lembreteConfig, autoSave]);
 
@@ -115,6 +125,18 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
     }
     setDiasTrabalho(novosDias);
     scheduleSave('dias_trabalho', novosDias);
+  }
+
+  function handleSaldoInicialChange(value: string) {
+    setSaldoInicial(value);
+    const matches = value.match(/^-?\d{2}:\d{2}$/);
+    if (matches) {
+      const isNegative = value.startsWith('-');
+      const pureValue = isNegative ? value.substring(1) : value;
+      let mins = paraMinutos(pureValue);
+      if (isNegative) mins = -mins;
+      scheduleSave('saldo_inicial', mins);
+    }
   }
 
   async function toggleTema() {
@@ -182,266 +204,59 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
     await supabase.auth.signOut();
   }
 
-  const nomeExibido = nome || userEmail.split('@')[0];
-
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="space-y-4 pb-24">
-      {/* Perfil */}
-      <div className="ios-card rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg">
-            <span className="text-xl font-bold text-white">{nomeExibido.charAt(0).toUpperCase()}</span>
-          </div>
-          <div>
-            <div className="font-semibold text-slate-800 dark:text-white">{nomeExibido}</div>
-            <div className="text-sm text-slate-500 dark:text-slate-400">{userEmail}</div>
-          </div>
-        </div>
-      </div>
+      
+      <AccountSettings 
+        nome={nome}
+        userEmail={userEmail}
+        novoEmail={novoEmail}
+        novaSenha={novaSenha}
+        confirmarSenha={confirmarSenha}
+        secaoConta={secaoConta}
+        status={status}
+        setNome={setNome}
+        setNovoEmail={setNovoEmail}
+        setNovaSenha={setNovaSenha}
+        setConfirmarSenha={setConfirmarSenha}
+        setSecaoConta={setSecaoConta}
+        onSalvarNome={handleSalvarNome}
+        onSalvarEmail={handleSalvarEmail}
+        onSalvarSenha={handleSalvarSenha}
+      />
 
-      {/* Minha Conta */}
-      <div className="ios-card rounded-2xl p-6 shadow-xl space-y-4">
-        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-          <User className="w-3 h-3" /> Minha Conta
-        </h3>
-
-        {secaoConta === null && (
-          <div className="space-y-2">
-            <button onClick={() => setSecaoConta('perfil')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 dark:bg-secondary/20 hover:bg-secondary dark:hover:bg-secondary/40 transition-colors text-left border border-border/50">
-              <div className="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center">
-                <User className="w-5 h-5 text-info" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">Nome</div>
-                <div className="text-xs text-muted-foreground">{nome || 'Adicionar nome'}</div>
-              </div>
-            </button>
-
-            <button onClick={() => setSecaoConta('email')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 dark:bg-secondary/20 hover:bg-secondary dark:hover:bg-secondary/40 transition-colors text-left border border-border/50">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">Email</div>
-                <div className="text-xs text-muted-foreground">{userEmail}</div>
-              </div>
-            </button>
-
-            <button onClick={() => setSecaoConta('senha')} className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/50 dark:bg-secondary/20 hover:bg-secondary dark:hover:bg-secondary/40 transition-colors text-left border border-border/50">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
-                <Lock className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">Senha</div>
-                <div className="text-xs text-muted-foreground">••••••••</div>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {secaoConta === 'perfil' && (
-          <div className="space-y-4">
-            <button onClick={() => setSecaoConta(null)} className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" /> Voltar
-            </button>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Nome exibido</label>
-              <input
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Seu nome"
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
-              />
-            </div>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={handleSalvarNome} disabled={status === 'saving'} className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg flex items-center justify-center gap-2 disabled:opacity-60">
-              {status === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar nome'}
-            </motion.button>
-          </div>
-        )}
-
-        {secaoConta === 'email' && (
-          <div className="space-y-4">
-            <button onClick={() => setSecaoConta(null)} className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" /> Voltar
-            </button>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Novo email</label>
-              <input
-                type="email"
-                value={novoEmail}
-                onChange={(e) => setNovoEmail(e.target.value)}
-                placeholder="novo@email.com"
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
-              />
-              <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">Um email de confirmacao sera enviado para o novo endereco.</div>
-            </div>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={handleSalvarEmail} disabled={status === 'saving'} className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg flex items-center justify-center gap-2 disabled:opacity-60">
-              {status === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Atualizar email'}
-            </motion.button>
-          </div>
-        )}
-
-        {secaoConta === 'senha' && (
-          <div className="space-y-4">
-            <button onClick={() => setSecaoConta(null)} className="text-sm text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" /> Voltar
-            </button>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Nova senha</label>
-              <input
-                type="password"
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                placeholder="Minimo 6 caracteres"
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Confirmar senha</label>
-              <input
-                type="password"
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                placeholder="Repita a senha"
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white placeholder:text-slate-400"
-              />
-            </div>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={handleSalvarSenha} disabled={status === 'saving'} className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold shadow-lg flex items-center justify-center gap-2 disabled:opacity-60">
-              {status === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Atualizar senha'}
-            </motion.button>
-          </div>
-        )}
-      </div>
-
-      {/* Configurações */}
       <div className="ios-card rounded-2xl p-6 shadow-xl space-y-5">
         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-          <Bell className="w-3 h-3" /> Configuracoes
+           Configuracoes
         </h3>
 
-        {/* Tema */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center border border-amber-200 dark:border-amber-800">
-              {darkMode ? <Moon className="w-5 h-5 text-amber-600 dark:text-amber-400" /> : <Sun className="w-5 h-5 text-amber-600" />}
-            </div>
-            <div>
-              <div className="text-sm font-medium text-foreground">Tema escuro</div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Auto-save</div>
-            </div>
-          </div>
-          <button
-            onClick={toggleTema}
-            disabled={status === 'saving'}
-            className={`relative w-12 h-7 rounded-full transition-colors ${darkMode ? 'bg-primary' : 'bg-secondary dark:bg-slate-700'} border border-border disabled:opacity-50`}
-          >
-            <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'}`} />
-          </button>
-        </div>
+        <ThemeSettings 
+          darkMode={darkMode}
+          status={status}
+          onToggleTema={toggleTema}
+        />
 
-        {/* Notificações Push Reais */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSubscribed ? 'bg-emerald-100 dark:bg-emerald-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
-              {isSubscribed ? <Bell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> : <BellOff className="w-5 h-5 text-slate-500 dark:text-slate-400" />}
-            </div>
-            <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Notificações Push</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Alertas reais no dispositivo</div>
-            </div>
-          </div>
-          <button
-            onClick={isSubscribed ? unsubscribe : subscribe}
-            disabled={loadingPush}
-            className={`relative w-12 h-7 rounded-full transition-colors ${isSubscribed ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'} border border-border disabled:opacity-50`}
-          >
-            <div className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${isSubscribed ? 'translate-x-5' : 'translate-x-0'} flex items-center justify-center`}>
-              {loadingPush && <Loader2 className="w-3 h-3 text-emerald-500 animate-spin" />}
-            </div>
-          </button>
-        </div>
+        <BalanceSettings 
+          saldoInicial={saldoInicial}
+          onSaldoInicialChange={handleSaldoInicialChange}
+        />
 
-        {/* Jornada */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-              <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Jornada diaria</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Horas esperadas por dia</div>
-            </div>
-          </div>
-          <input
-            type="time"
-            value={jornada}
-            onChange={(e) => handleJornadaChange(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-400 text-slate-800 dark:text-white"
-          />
-        </div>
+        <NotificationSettings 
+          isSubscribed={isSubscribed}
+          loadingPush={loadingPush}
+          lembreteConfig={lembreteConfig}
+          onSubscribe={subscribe}
+          onUnsubscribe={unsubscribe}
+          onSaveLembrete={saveLembrete}
+        />
 
-        {/* Dias de Trabalho */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 flex items-center justify-center">
-              <CalendarDays className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-slate-700 dark:text-slate-200">Dias de trabalho</div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">Selecione os dias da sua escala</div>
-            </div>
-          </div>
-          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 mt-3">
-            {[{ n: 0, l: 'D' }, { n: 1, l: 'S' }, { n: 2, l: 'T' }, { n: 3, l: 'Q' }, { n: 4, l: 'Q' }, { n: 5, l: 'S' }, { n: 6, l: 'S' }].map((dia) => {
-              const ativo = diasTrabalho.includes(dia.n);
-              return (
-                <button
-                  key={dia.n}
-                  onClick={() => toggleDiaTrabalho(dia.n)}
-                  className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${ativo ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : 'bg-transparent text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                >
-                  {dia.l}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <WorkScheduleSettings 
+          jornada={jornada}
+          diasTrabalho={diasTrabalho}
+          onJornadaChange={handleJornadaChange}
+          onToggleDiaTrabalho={toggleDiaTrabalho}
+        />
 
-        {/* Lembretes */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <Bell className="w-4 h-4" /> Lembretes
-          </h3>
-          {([
-            { key: 'entrada' as const, label: 'Entrada', icon: LogIn },
-            { key: 'intervalo' as const, label: 'Intervalo', icon: Coffee },
-            { key: 'retorno' as const, label: 'Retorno', icon: Play },
-            { key: 'saida' as const, label: 'Saída', icon: IconSaida },
-          ]).map(({ key, label, icon: Icon }) => (
-            <div key={key} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${lembreteConfig[key] ? 'bg-cyan-100 dark:bg-cyan-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                  <Icon className={`w-4 h-4 ${lembreteConfig[key] ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                </div>
-                <span className="text-sm text-slate-700 dark:text-slate-200">{label}</span>
-              </div>
-              <button
-                onClick={() => saveLembrete({ [key]: !lembreteConfig[key] })}
-                className={`relative w-10 h-6 rounded-full transition-colors ${lembreteConfig[key] ? 'bg-cyan-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-              >
-                <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${lembreteConfig[key] ? 'translate-x-4' : 'translate-x-0'}`} />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Status feedback */}
-        {status === 'saving' && (
-          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-            <Loader2 className="w-4 h-4 animate-spin" /> Salvando...
-          </div>
-        )}
         {status === 'saved' && (
           <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 animate-fade-out">
             <CheckCircle2 className="w-4 h-4" /> {statusMsg}
@@ -454,13 +269,8 @@ export default function Settings({ profile, userEmail, onProfileUpdate }: Settin
         )}
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={handleLogout}
-        className="w-full py-3.5 rounded-xl bg-rose-500 text-white font-semibold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-      >
-        <LogOut className="w-5 h-5" /> Sair da conta
-      </button>
+      <AccountActions onLogout={handleLogout} />
+
     </motion.div>
   );
 }

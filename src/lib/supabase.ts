@@ -155,6 +155,12 @@ export async function deleteCalendario(userId: string, data: string): Promise<vo
   if (error) throw error;
 }
 
+export async function getSaldoGeral(userId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('get_saldo_geral', { p_user_id: userId });
+  if (error) throw error;
+  return data || 0;
+}
+
 // --- Push Notifications ---
 
 export async function upsertPushSubscription(userId: string, subscription: PushSubscription): Promise<void> {

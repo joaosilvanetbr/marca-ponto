@@ -141,19 +141,19 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               {modo === 'cadastro' && (
                 <div className="mt-3 p-3 rounded-xl bg-secondary/30 border border-border/30 space-y-1">
                   <p className={`text-[10px] font-bold flex items-center gap-1.5 ${password.length >= 8 ? 'text-success' : 'text-muted-foreground/60'}`}>
-                    <div className={`w-1 h-1 rounded-full ${password.length >= 8 ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    <span className={`w-1 h-1 rounded-full ${password.length >= 8 ? 'bg-success' : 'bg-muted-foreground/30'}`} />
                     MÍNIMO 8 CARACTERES
                   </p>
                   <p className={`text-[10px] font-bold flex items-center gap-1.5 ${/[a-z]/.test(password) ? 'text-success' : 'text-muted-foreground/60'}`}>
-                    <div className={`w-1 h-1 rounded-full ${/[a-z]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    <span className={`w-1 h-1 rounded-full ${/[a-z]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
                     UMA LETRA MINÚSCULA
                   </p>
                   <p className={`text-[10px] font-bold flex items-center gap-1.5 ${/[A-Z]/.test(password) ? 'text-success' : 'text-muted-foreground/60'}`}>
-                    <div className={`w-1 h-1 rounded-full ${/[A-Z]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    <span className={`w-1 h-1 rounded-full ${/[A-Z]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
                     UMA LETRA MAIÚSCULA
                   </p>
                   <p className={`text-[10px] font-bold flex items-center gap-1.5 ${/[0-9]/.test(password) ? 'text-success' : 'text-muted-foreground/60'}`}>
-                    <div className={`w-1 h-1 rounded-full ${/[0-9]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
+                    <span className={`w-1 h-1 rounded-full ${/[0-9]/.test(password) ? 'bg-success' : 'bg-muted-foreground/30'}`} />
                     PELO MENOS UM NÚMERO
                   </p>
                 </div>
